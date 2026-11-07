@@ -1,0 +1,12 @@
+{
+  "name": "krm-brite-ecommerce",
+  "version": "1.0.0",
+  "description": "KRM Brite E-commerce frontend and Netlify serverless functions for Razorpay integration",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "razorpay": "^2.9.2"
+  }
+}

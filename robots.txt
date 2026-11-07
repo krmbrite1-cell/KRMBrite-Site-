@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Block secret admin and private pages
+Disallow: /krm-sec-admin-x982
+Disallow: /krm-sec-admin-x982.html
+Disallow: /admin.js
+Disallow: /login
+Disallow: /login.html
+Disallow: /profile
+Disallow: /profile.html
+Disallow: /checkout
+Disallow: /checkout.html
+Disallow: /firebase-config.js
+
+# Sitemap location
+Sitemap: https://www.krmbrite.in/sitemap.xml

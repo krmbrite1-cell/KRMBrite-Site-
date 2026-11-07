@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - KRM Brite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --text-dark: #0f172a;
+            --text-body: #475569;
+            --bg-light: #f8fafc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-light); color: var(--text-dark); line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+        header { text-align: center; margin-bottom: 40px; }
+        .logo { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; color: var(--text-dark); text-decoration: none; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px; color: var(--text-dark); }
+        .content { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; color: var(--text-dark); }
+        p, ul { margin-bottom: 15px; color: var(--text-body); }
+        ul { padding-left: 20px; }
+        a.back { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: 500; }
+        a.back:hover { text-decoration: underline; }
+        footer { text-align: center; margin-top: 40px; font-size: 0.9rem; color: var(--text-body); }
+        .footer-links { margin-top: 10px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .footer-links a { color: inherit; text-decoration: none; }
+        .footer-links a:hover { color: var(--primary); }
+        .highlight { color: var(--primary); font-weight: 600; }
+        @media (max-width: 600px) {
+            .content { padding: 25px; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="./" class="back">← Back to Shop</a>
+        <header>
+            <a href="./" class="logo">KRM Brite</a>
+        </header>
+        <div class="content">
+            <h1>About KRM Brite</h1>
+            
+            <h2>Our Story</h2>
+            <p>At <span class="highlight">KRM Brite</span>, we recognized a simple truth in the cleaning industry: consumers are often paying mostly for water. Traditional floor cleaners and detergents come in bulky plastic bottles filled with up to 90% water. We decided to change that narrative.</p>
+            <p>Our journey began with the vision to create a product that delivers uncompromising quality, powerful cleaning, and outstanding value. We engineered a highly concentrated formula where one 500ml bottle is capable of making 5 full litres of premium cleaner right in your own home. You just add the water.</p>
+
+            <h2>Our Mission</h2>
+            <p>Our mission is to provide households with safe, eco-friendly, and powerful cleaning solutions. We aim to reduce plastic waste and carbon footprint by shipping pure concentrate, all while ensuring that your home environment remains hygienic and fresh.</p>
+
+            <h2>Why Choose Us?</h2>
+            <ul>
+                <li><strong>Unmatched Value:</strong> Stop paying for water. Our 500ml concentrate gives you 5 litres of powerful cleaner, offering the best value for your money.</li>
+                <li><strong>Hospital-Grade Protection:</strong> Engineered to kill 99.9% of viruses and bacteria, leaving your floors truly hygienic and safe for children and pets.</li>
+                <li><strong>Eco-Friendly Formula:</strong> Made with natural-based ingredients that are tough on dirt but gentle on the planet.</li>
+                <li><strong>Long-Lasting Freshness:</strong> Infused with a premium French Paradise scent that keeps your home smelling amazing for 24 hours.</li>
+            </ul>
+
+            <p style="margin-top: 30px; font-style: italic; text-align: center;">Experience the premium difference today with KRM Brite.</p>
+        </div>
+        <footer>
+            &copy; 2026 KRM Brite. All rights reserved.
+            <div class="footer-links">
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/refund">Refund</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

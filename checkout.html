@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | KRM Brite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="checkout.css">
+  <!-- Razorpay must load synchronously -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- EmailJS SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="checkout-wrapper">
+        <!-- Left Side: Product Images -->
+        <div class="checkout-right">
+            <div class="checkout-form-container">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <a href="./" onclick="sessionStorage.removeItem('krm_buy_now_item')" class="back-link" style="color: var(--primary); font-weight: 600;">← Back to Shop</a>
+                    <h1 style="font-size: 2.5rem; color: var(--text-dark); margin-top: 10px;">KRM Brite</h1>
+                    <p style="color: var(--text-body);">Experience Premium Quality at a Smart Price</p>
+                </div>
+                <div class="note-box info">
+                    <div class="icon">📦</div>
+                    <div class="text">
+                        <strong>Shipping Partner:</strong> We deliver via <span class="highlight">ST Courier & The Professional Couriers</span>. Please ensure your location is serviceable by ST Courier or The Professional Couriers.
+                        <div style="margin-top: 8px; font-size: 0.9em; color: var(--text-body);">ஷிப்பிங் பார்ட்னர்: நாங்கள் ST கூரியர் மற்றும் The Professional Couriers வழியாக விநியோகிக்கிறோம். உங்கள் பகுதிக்கு சேவை இருப்பதை உறுதி செய்து கொள்ளவும்.</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 25px; text-align: center; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: #ffffff; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <img src="HI/MainBox.png" alt="Order Packaging Preview" id="checkoutPackageImg" style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; display: block;">
+                    <!-- PREVIOUS BOX IMAGE (Uncomment to restore):
+                    <img src="HI/Box.webp" alt="Order Packaging Preview" style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; display: block;">
+                    -->
+                </div>
+
+                <h2 class="form-title">Shipping Address</h2>
+                
+                <div id="savedAddressBanner" style="display:none; background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:0.86rem; color:#166534; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.1rem;">📍</span>
+                        <span><strong>Previous address auto-filled!</strong> You can edit or change it if needed.</span>
+                    </div>
+                    <button type="button" id="clearAddressBtn" style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; padding:4px 10px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer; white-space:nowrap; transition:all 0.2s;">
+                        Clear / New
+                    </button>
+                </div>
+                
+                <form id="checkoutForm">
+                    <div class="input-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" required placeholder="Your First Name">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="mobileNumber">Number</label>
+                        <input type="tel" id="mobileNumber" required placeholder="Your Phone Number">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="emailAddress">Email Address</label>
+                        <input type="email" id="emailAddress" required placeholder="For Order Confirmation & Tracking">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="address1">Address Line 1</label>
+                        <input type="text" id="address1" required placeholder="House No, Building, Street">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="address2">Address Line 2</label>
+                        <input type="text" id="address2" placeholder="Locality, Area, Landmark">
+                    </div>
+
+                    <div class="row">
+                        <div class="input-group half">
+                            <label for="district">District</label>
+                            <input type="text" id="district" required placeholder="Your District">
+                        </div>
+                        <div class="input-group half">
+                            <label for="pincode">Pincode</label>
+                            <input type="number" id="pincode" required placeholder="6 digit code">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="state">State</label>
+                        <select id="state" required>
+                            <option value="" disabled selected>Select State</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                            <option value="Ladakh">Ladakh</option>
+                            <option value="Lakshadweep">Lakshadweep</option>
+                            <option value="Puducherry">Puducherry</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="deliveryBy">Delivery Partner (Delivery By) <span style="color:#ef4444;">*</span></label>
+                        <select id="deliveryBy" required>
+                            <option value="" disabled selected>Select Delivery Partner</option>
+                            <option value="ST Courier">ST Courier</option>
+                            <option value="The Professional Couriers">The Professional Couriers</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.82rem; margin-top: 5px; display: block; line-height: 1.4;">
+                            🚚 உங்கள் பகுதிக்கு சேவை வழங்கும் கூரியரைத் தேர்ந்தெடுக்கவும் (Please select courier serviceable at your pincode)
+                        </small>
+                    </div>
+
+                    <div class="note-box delivery-note">
+                        <div class="icon">🚚</div>
+                        <div class="text">
+                            <strong>Tamilnadu:</strong> Free Delivery | <strong>South (AP, KA, KL):</strong> ₹40/item | <strong>Others:</strong> ₹100/item
+                        </div>
+                    </div>
+
+                    <div class="order-summary">
+                        <h3>Order Summary</h3>
+                        <div id="checkout-items-list">
+                            <!-- Items injected via JS -->
+                        </div>
+
+                        <!-- 🎟️ COUPON CODE INPUT -->
+                        <div class="coupon-section" id="couponSection">
+                            <label for="couponCodeInput" class="coupon-label">Have a coupon code?</label>
+                            <div class="coupon-box">
+                                <input type="text" id="couponCodeInput" placeholder="Enter coupon code" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter'){event.preventDefault();handleApplyCoupon();}">
+                                <button type="button" id="applyCouponBtn" onclick="handleApplyCoupon()">Apply</button>
+                            </div>
+                            <div id="couponMessage" class="coupon-feedback" style="display:none;"></div>
+
+                            <!-- 👤 Regular Customer Note (Visible for regular products) -->
+                            <div class="coupon-regular-note" id="couponRegularNote">
+                                <span class="note-icon">💡</span>
+                                <div class="note-text">
+                                    <span class="note-title">Note for Regular Customers:</span> Special discount coupon codes are exclusively for our <strong>Regular Customers</strong> & referral partners. If you have a code, enter it above!
+                                    <span class="note-tamil">(ரெகுலர் வாடிக்கையாளர்கள் மற்றும் ரெஃப்ரல் கூப்பன் உள்ளவர்கள் இங்கு பயன்படுத்தலாம்).</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-row" id="subtotalRow" style="display:none;">
+                            <span>Subtotal</span>
+                            <span id="subtotalCostDisplay">₹0.00</span>
+                        </div>
+
+                        <div class="summary-row" id="couponDiscountRow" style="display:none; color: #10b981; font-weight: 600;">
+                            <span style="display: flex; align-items: center; gap: 6px;">
+                                <span>Discount (<span id="appliedCouponCode"></span>)</span>
+                                <button type="button" onclick="handleRemoveCoupon()" class="remove-coupon-btn" title="Remove coupon">✕</button>
+                            </span>
+                            <span id="couponDiscountDisplay">-₹0.00</span>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Delivery Cost <span id="deliveryRateDisplay" style="font-size: 0.8rem; color: var(--text-light); font-weight: 400; margin-left: 4px;"></span></span>
+                            <span id="deliveryCostDisplay">₹0.00</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total Amount</span>
+                            <span id="totalCostDisplay">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="proceed-btn">
+                        Proceed to Pay <span class="arrow">→</span>
+                    </button>
+
+                    <div id="paymentProcessNotice" class="payment-process-notice" style="display: none;">
+                        <div class="notice-spinner"></div>
+                        <div class="notice-text">
+                            <span class="notice-main">Processing payment... Please wait a few seconds.</span>
+                            <span class="notice-sub">Do not close or refresh this tab.</span>
+                        </div>
+                    </div>
+                </form>
+                
+                <div style="margin-top: 30px; text-align: center; font-size: 0.85rem; color: #64748b;">
+                    &copy; 2026 KRM Brite.<br>
+                    <div style="margin-top: 8px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <a href="/terms" style="color: inherit; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='inherit'">Terms</a> |
+                        <a href="/privacy" style="color: inherit; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='inherit'">Privacy</a> |
+                        <a href="/refund" style="color: inherit; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='inherit'">Refund</a> |
+                        <a href="/about" style="color: inherit; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='inherit'">About</a> |
+                        <a href="/contact" style="color: inherit; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='inherit'">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase CDN (defer) -->
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <!-- App Script (defer) -->
+    <script defer src="data.js"></script>
+    <script defer src="main.js"></script>
+    <script defer src="referrals-service.js"></script>
+    <script defer src="checkout.js"></script>
+</body>
+</html>

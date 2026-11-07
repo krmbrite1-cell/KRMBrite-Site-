@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - KRM Brite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --text-dark: #0f172a;
+            --text-body: #475569;
+            --bg-light: #f8fafc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-light); color: var(--text-dark); line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+        header { text-align: center; margin-bottom: 40px; }
+        .logo { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; color: var(--text-dark); text-decoration: none; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: 10px; color: var(--text-dark); }
+        .content { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-top: 30px; margin-bottom: 15px; color: var(--text-dark); }
+        p { margin-bottom: 15px; color: var(--text-body); }
+        a.back { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: 500; }
+        a.back:hover { text-decoration: underline; }
+        footer { text-align: center; margin-top: 40px; font-size: 0.9rem; color: var(--text-body); }
+        .footer-links { margin-top: 10px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .footer-links a { color: inherit; text-decoration: none; }
+        .footer-links a:hover { color: var(--primary); }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .contact-card {
+            background: var(--bg-light);
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .contact-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        .contact-card h3 {
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+        .contact-card a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .contact-card a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .content { padding: 25px; }
+            h1 { font-size: 2rem; }
+            .contact-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="./" class="back">← Back to Shop</a>
+        <header>
+            <a href="./" class="logo">KRM Brite</a>
+        </header>
+        <div class="content">
+            <div style="text-align: center;">
+                <h1>Get in Touch</h1>
+                <p>We're here to help! Whether you have a question about our products, need assistance with your order, or just want to share your experience, our team is ready to assist you.</p>
+            </div>
+            
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <div class="contact-icon">📞</div>
+                    <h3>Phone / WhatsApp</h3>
+                    <p>Mon-Sat, 9:00 AM to 6:00 PM</p>
+                    <a href="https://wa.me/917094328711" target="_blank">+91 70943 28711</a>
+                </div>
+                
+                <div class="contact-card">
+                    <div class="contact-icon">✉️</div>
+                    <h3>Email Support</h3>
+                    <p>We typically reply within 24 hours.</p>
+                    <a href="mailto:krmbrite1@gmail.com">krmbrite1@gmail.com</a>
+                </div>
+            </div>
+
+            <h2 style="text-align: center; margin-top: 40px;">Our Office</h2>
+            <div style="text-align: center; color: var(--text-body);">
+                <p><strong>KRM Brite Headquarters</strong></p>
+                <p>K. Ragul, 73, Amman koil Street, v.Kattupalayam,</p>
+                <p>Cuddalore - 607004</p>
+                <p>Tamil Nadu, India</p>
+            </div>
+        </div>
+        <footer>
+            &copy; 2026 KRM Brite. All rights reserved.
+            <div class="footer-links">
+                <a href="/terms">Terms</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/refund">Refund</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+                <a href="earn.html">🎁 Refer & Earn</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

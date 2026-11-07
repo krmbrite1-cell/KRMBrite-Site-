@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ✅ SEO: Base meta (overridden per-product by product.js) -->
+    <title>KRM Brite | Premium Cleaning Products - Buy Online India</title>
+    <meta name="description" content="Shop KRM Brite premium cleaning products - Floor cleaner concentrate, liquid detergent, phenyl, glass cleaner. 99.9% germ kill. Fast delivery across India.">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="KRM Brite">
+
+    <!-- ✅ Canonical (updated per product by JS) -->
+    <link rel="canonical" href="https://www.krmbrite.in/product" id="canonical-tag">
+
+    <!-- ✅ Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/avif" href="logo.avif">
+    <link rel="apple-touch-icon" href="logo.avif">
+
+    <!-- ✅ Open Graph (updated per product by JS) -->
+    <meta property="og:type" content="product">
+    <meta property="og:site_name" content="KRM Brite">
+    <meta property="og:url" content="https://www.krmbrite.in/product" id="og-url">
+    <meta property="og:title" content="KRM Brite | Detergent + Fabric Conditioner Concentrate - 1kg Makes 5 Litres" id="og-title">
+    <meta property="og:description" content="Shop KRM Brite 2-in-1 Liquid Detergent + Fabric Conditioner Concentrate online. 1kg makes 5 litres. Fast delivery across India." id="og-desc">
+    <meta property="og:image" content="https://www.krmbrite.in/Product/Liquid%20Detergent/D1.avif" id="og-image">
+    <meta property="og:locale" content="en_IN">
+
+    <!-- ✅ Preconnects -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- 🚀 Instant Shell: Load data and pre-render before main JS -->
+    <script src="data.js"></script>
+    <script>
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            if (!productId) return;
+
+            const product = storeData.products.find(p => p.id === productId);
+            if (product) {
+                // Preload main images for this specific product
+                product.images.slice(0, 2).forEach(src => {
+                    const lnk = document.createElement('link');
+                    lnk.rel = 'preload';
+                    lnk.as = 'image';
+                    lnk.href = src;
+                    lnk.fetchPriority = 'high';
+                    document.head.appendChild(lnk);
+                });
+
+                // Fast inject basic info to avoid blank screen
+                document.addEventListener('DOMContentLoaded', () => {
+                    const titleEl = document.getElementById('pg-title');
+                    const sliderEl = document.getElementById('pg-slider');
+                    const priceEl = document.getElementById('pg-price');
+                    const compareEl = document.getElementById('pg-compare');
+                    const descEl = document.getElementById('pg-desc');
+
+                    if (titleEl) titleEl.textContent = product.title;
+                    if (priceEl) priceEl.textContent = `${storeData.settings.currencySymbol} ${product.price.toFixed(2)} ${storeData.settings.currencyCode}`;
+                    if (compareEl && product.compareAtPrice) compareEl.textContent = `Rs. ${product.compareAtPrice.toFixed(2)} INR`;
+                    if (descEl) descEl.textContent = product.description;
+                    
+                    if (sliderEl && product.images.length > 0) {
+                        sliderEl.innerHTML = product.images.map((img, i) => `
+                            <div class="pg-slide ${i === 0 ? 'active' : ''}">
+                                <img src="${img}" alt="${product.title} - image ${i + 1}" ${i === 0 ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"'} onerror="if(this.src.endsWith('.avif'))this.src=this.src.replace('.avif','.webp')">
+                            </div>
+                        `).join('');
+                    }
+                });
+            }
+        })();
+    </script>
+    <style>
+        #pg-video-frame {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        @media (max-width: 768px) {
+            #pg-video-frame {
+                aspect-ratio: 16/9; /* Keep landscape on mobile as requested */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container header-inner">
+            <a href="./" class="logo">
+                <img src="logo.avif" alt="KRM Brite" style="max-height: 45px;">
+            </a>
+            <nav class="nav-links" id="desktop-nav"></nav>
+            <div class="header-icons" style="display: flex; align-items: center; gap: 20px;">
+                <div class="cart-icon" id="cart-icon-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span class="cart-count" id="cart-count">0</span>
+                </div>
+                <button class="hamburger" id="hamburger-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 28px; height: 28px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Drawer -->
+    <div class="drawer-overlay" id="mobile-menu-overlay"></div>
+    <div class="drawer drawer-left" id="mobile-menu">
+        <div class="drawer-header">
+            <span style="font-weight: 600; font-size: 18px;">Menu</span>
+            <button class="drawer-close" id="mobile-menu-close">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <nav class="mobile-nav" id="mobile-nav"></nav>
+        </div>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div class="drawer-overlay" id="cart-overlay"></div>
+    <div class="drawer drawer-right" id="cart-drawer">
+        <div class="drawer-header">
+            <span style="font-weight: 600; font-size: 18px;">Your cart</span>
+            <button class="drawer-close" id="cart-close">&times;</button>
+        </div>
+        <div class="drawer-body" id="cart-items-container"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Estimated total</span>
+                <span id="cart-total-price">Rs. 0.00</span>
+            </div>
+            <button class="btn" onclick="window.location.href='checkout.html'">Check out</button>
+        </div>
+    </div>
+
+    <!-- Main Product Section -->
+    <main class="container">
+        <div class="product-page-container">
+            <!-- Left: Gallery -->
+            <div class="product-gallery" id="pg-gallery">
+                <div class="pg-slider-wrapper">
+                    <div class="pg-slider" id="pg-slider">
+                        <!-- Slides injected via JS -->
+                    </div>
+                </div>
+                <div class="slider-dots" id="pg-dots">
+                    <!-- Dots injected via JS -->
+                </div>
+                <div class="thumb-grid" id="pg-thumbs">
+                    <!-- Thumbs injected via JS -->
+                </div>
+            </div>
+            
+            <!-- Right: Details -->
+            <div class="product-details">
+                <div class="product-reviews" style="margin-bottom: 20px;">
+                    <span class="stars" id="pg-stars"></span>
+                    <span id="pg-reviews-txt"></span>
+                </div>
+                
+                <div id="pg-bought-badge-container"></div>
+                <h1 class="pd-title" id="pg-title"></h1>
+                
+                <div class="pd-price-wrap">
+                    <span class="pd-price" id="pg-price"></span>
+                    <span class="pd-compare" id="pg-compare"></span>
+                    <span class="badge" style="position: static; font-size: 14px; background: var(--sale-badge);" id="pg-sale-badge">Sale</span>
+                </div>
+                
+                <div class="pd-desc" id="pg-desc"></div>
+                
+                <div class="pd-actions">
+                    <label style="font-weight: 500; font-size: 14px;">Quantity</label>
+                    <div class="qty-control" style="width: 120px; height: 45px;">
+                        <button class="qty-btn" id="pd-qty-minus">-</button>
+                        <input type="text" class="qty-input" id="pd-qty-input" value="1" readonly style="flex-grow: 1;">
+                        <button class="qty-btn" id="pd-qty-plus">+</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; align-items: center; width: 100%;">
+                        <button class="btn btn-secondary desktop-add-cart-btn" id="desktop-add-cart" style="height: 50px; font-size: 16px; font-weight: 600; border-width: 2px; flex: 1;">Add to cart</button>
+                        <button id="buy-it-now-btn" class="btn btn-buy-now" style="height: 50px; font-size: 16px; font-weight: 600; flex: 1;">Buy it now</button>
+                    </div>
+                </div>
+                
+                <div id="pg-video-container" style="margin-top: 30px; display: none;">
+                    <iframe id="pg-video-frame" src="" frameborder="0" allowfullscreen></iframe>
+                </div>
+                
+                <div id="pg-about" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--border-color);"></div>
+
+                <!-- PRODUCT REVIEWS SECTION -->
+                <section class="reviews-section" id="product-reviews" style="border-top: 1px solid var(--border-color); padding-top: 50px; margin-top: 50px;">
+                    <h2 class="section-title" style="margin-bottom: 40px;">Our Happy Customers</h2>
+                    
+                    <div id="productReviewSummary" class="review-summary">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <div class="product-reviews-list" id="productReviewsList" style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 40px;">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <div class="add-review-box premium-form">
+                        <h3 class="form-title">Write a Review</h3>
+                        <p class="form-subtitle">Share your experience with this product!</p>
+                        <form id="productReviewForm">
+                            <div class="star-rating vertical-stars" id="productStarRatingSelector">
+                                <span data-val="1" class="lit">★</span>
+                                <span data-val="2" class="lit">★</span>
+                                <span data-val="3" class="lit">★</span>
+                                <span data-val="4" class="lit">★</span>
+                                <span data-val="5" class="lit">★</span>
+                            </div>
+                            <div class="input-group">
+                                <label for="prodRevName">Name</label>
+                                <input type="text" id="prodRevName" placeholder="Your Name" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="prodRevBody">Message</label>
+                                <textarea id="prodRevBody" rows="4" placeholder="How was it?..." required></textarea>
+                            </div>
+                            <!-- Photo Upload -->
+                            <div class="input-group">
+                                <label>Add Photos <span style="color:#94a3b8; font-weight:400; font-size:0.85rem;">(Optional, max 3)</span></label>
+                                <label for="prodRevPhotos" class="photo-upload-area" id="photoUploadLabel">
+                                    <div class="photo-upload-icon">📷</div>
+                                    <div class="photo-upload-text">Click to add photos</div>
+                                    <div class="photo-upload-hint">JPG, PNG • Max 5MB each</div>
+                                </label>
+                                <input type="file" id="prodRevPhotos" accept="image/*" multiple style="display:none;">
+                                <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+                            </div>
+                            <button type="submit" class="submit-btn full-width" id="prodRevSubmitBtn">Post Review</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Sticky Add to Cart Footer -->
+    <div class="mobile-sticky-footer">
+        <button class="btn btn-secondary" id="mobile-add-cart" style="border-width: 2px; font-weight: 600;">Add to cart</button>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <img src="logo.avif" alt="KRM Brite" class="footer-logo">
+                    <p class="footer-desc">KRM Brite is a trusted leader in the cleaning and hygiene industry, committed to providing top-tier cleaning solutions for both commercial and residential spaces. With a deep focus on quality, performance, and customer satisfaction, we specialize in delivering products that tackle the toughest cleaning tasks with ease and efficiency.</p>
+                </div>
+                
+                <div class="footer-col footer-links-col">
+                    <h4 class="footer-heading">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="./">Home Page</a></li>
+                        <li><a href="./#products">Shop Now</a></li>
+                        <li><a href="./#how-to-use">Why KRM Brite?</a></li>
+                        <li><a href="./#reviews">Our Happy Customers</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col footer-contact-col">
+                    <h4 class="footer-heading">Contact Us</h4>
+                    <ul class="footer-contact">
+                        <li>
+                            <div class="contact-item">
+                                <span class="contact-icon">📍</span>
+                                <span class="contact-text">K. Ragul, 73, Amman koil Street, v.Kattupalayam, Cuddalore - 607004</span>
+                            </div>
+                        </li>
+                        <li>
+                            <a href="https://wa.me/917094328711" target="_blank" class="contact-item">
+                                <span class="contact-icon">📞</span>
+                                <span class="contact-text">+91 70943 28711</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="mailto:krmbrite1@gmail.com" class="contact-item">
+                                <span class="contact-icon">✉️</span>
+                                <span class="contact-text">krmbrite1@gmail.com</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="social-icons">
+                        <a href="https://www.instagram.com/krm_brite" target="_blank" style="display:inline-block; width:34px; height:34px; border-radius:8px; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                        </a>
+                        <a href="https://www.youtube.com/@firstfrycheck" target="_blank" style="display:inline-block; width:34px; height:34px; border-radius:8px; background:#FF0000; color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:transform 0.3s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 KRM Brite. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="/terms">Terms</a>
+                    <a href="/privacy">Privacy</a>
+                    <a href="/refund">Refund</a>
+                    <a href="/about">About</a>
+                    <a href="/contact">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase CDN (defer) -->
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <!-- App Scripts (defer) -->
+    <script defer src="main.js"></script>
+    <script defer src="product.js"></script>
+</body>
+</html>

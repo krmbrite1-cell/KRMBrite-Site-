@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refer & Earn Admin Portal | KRM Brite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --card: #1a2235;
+      --border: #1e2d45;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --green: #10b981;
+      --green-dark: #059669;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --radius: 14px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+    /* LOGIN OVERLAY */
+    #loginOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 0%, #1a1040 0%, #0b0f1a 70%);
+    }
+    .login-card {
+      background: rgba(26,34,53,0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 440px;
+      max-width: 90vw;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+    .login-logo {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--green), #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .login-sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+    .login-input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: 0.2s;
+    }
+    .login-input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.2);
+    }
+    .login-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .login-btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .login-error {
+      color: var(--red);
+      font-size: 0.85rem;
+      margin-top: 10px;
+      display: none;
+    }
+    .login-back {
+      display: block;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    .login-back:hover { color: var(--text); }
+
+    /* APP LAYOUT */
+    #adminShell {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* TOP BAR */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-tag {
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.3);
+      color: #34d399;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-nav-link {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-nav-link:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .btn-logout {
+      background: rgba(239,68,68,0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.3);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-logout:hover {
+      background: rgba(239,68,68,0.25);
+    }
+
+    /* MAIN VIEW */
+    .admin-main {
+      padding: 30px 36px;
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* KPI STATS ROW */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+    .stat-green::before { background: var(--green); }
+    .stat-blue::before { background: #38bdf8; }
+    .stat-gold::before { background: var(--yellow); }
+    .stat-purple::before { background: var(--accent); }
+
+    .stat-lbl {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .stat-val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+    .stat-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* TOOLBAR & CONTROLS */
+    .toolbar-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .tb-filters {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .tb-input {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .tb-input:focus { border-color: var(--green); }
+    .btn-action-green {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #ffffff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-action-green:hover { opacity: 0.92; transform: translateY(-1px); }
+
+    /* TABLE */
+    .tbl-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-x: auto;
+      margin-bottom: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th {
+      background: #0f172a;
+      padding: 14px 18px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(30,45,69,0.5);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(99,102,241,0.04); }
+
+    .user-col {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar-sm {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .ref-code-badge {
+      font-family: monospace;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56,189,248,0.1);
+      border: 1px solid rgba(56,189,248,0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      letter-spacing: 1px;
+    }
+    .balance-badge {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--green);
+    }
+    .status-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 50px;
+      display: inline-block;
+    }
+    .status-active { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .status-inactive { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+    .btn-view-details {
+      background: rgba(99,102,241,0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-view-details:hover {
+      background: rgba(99,102,241,0.3);
+      transform: translateY(-1px);
+    }
+
+    /* MODAL (DETAIL VIEW) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 900px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 10;
+    }
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body {
+      padding: 28px;
+    }
+
+    .detail-profile-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .dp-item label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .dp-item val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      display: block;
+    }
+
+    .settle-bar {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .btn-settle {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-settle:hover { opacity: 0.92; }
+
+    /* TOAST */
+    #toastNotice {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #ffffff;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 9999;
+    }
+    #toastNotice.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .topbar { padding: 14px 20px; }
+      .admin-main { padding: 20px 15px; }
+      .toolbar-wrap { flex-direction: column; align-items: stretch; }
+    }
+
+    /* PAYOUT REQUESTS SECTION & BUTTONS */
+    .stat-amber::before { background: var(--yellow); }
+    .stat-cyan::before { background: #06b6d4; }
+    .payout-filter-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .payout-filter-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .payout-filter-btn.active {
+      background: rgba(99,102,241,0.25);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(99,102,241,0.2);
+    }
+    .btn-pay-action {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #ffffff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.2s;
+      box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+    }
+    .btn-pay-action:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .btn-reject-action {
+      background: rgba(239,68,68,0.12);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.3);
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-reject-action:hover {
+      background: rgba(239,68,68,0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================================
+       LOGIN SCREEN
+       ==================================================================== -->
+  <div id="loginOverlay">
+    <div class="login-card">
+      <div class="login-logo">🎁 KRM Brite</div>
+      <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Refer & Earn Admin Portal</div>
+      <div class="login-sub">Protected Administrative Access</div>
+
+      <input class="login-input" type="password" id="adminPassword" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')attemptLogin()">
+      <div class="login-error" id="loginErrorMsg"></div>
+
+      <button class="login-btn" id="loginBtn" onclick="attemptLogin()">Unlock Portal →</button>
+      <a class="login-back" href="krm-sec-admin-x982.html">← Back to Main Admin</a>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       AUTHENTICATED ADMIN APP
+       ==================================================================== -->
+  <div id="adminShell">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-title">
+          <span>🎁</span> KRM Referrals Admin
+        </div>
+        <span class="badge-tag">Commission Control</span>
+      </div>
+
+      <div class="topbar-actions">
+        <a href="krm-sec-admin-x982.html" class="btn-nav-link">
+          <span>📦</span> Orders & Stock Admin
+        </a>
+        <a href="earn.html" target="_blank" class="btn-nav-link" style="color: #38bdf8; border-color: rgba(56,189,248,0.3);">
+          <span>↗</span> View Public Earn Page
+        </a>
+        <button class="btn-logout" onclick="adminLogout()">🔒 Logout</button>
+      </div>
+    </header>
+
+    <!-- MAIN VIEW -->
+    <main class="admin-main fade-in">
+
+      <!-- KPI METRICS ROW -->
+      <div class="stats-row">
+        <div class="stat-card stat-blue">
+          <div class="stat-lbl">
+            <span>Total Referrers</span>
+            <span>👥</span>
+          </div>
+          <div class="stat-val" id="kpiTotalReferrers">0</div>
+          <div class="stat-desc">Registered partner accounts</div>
+        </div>
+
+        <div class="stat-card stat-green">
+          <div class="stat-lbl">
+            <span>Customer Referrals</span>
+            <span>🛍️</span>
+          </div>
+          <div class="stat-val" id="kpiTotalReferrals">0</div>
+          <div class="stat-desc">Orders placed using referral codes</div>
+        </div>
+
+        <div class="stat-card stat-gold">
+          <div class="stat-lbl">
+            <span>Total Commissions</span>
+            <span>💰</span>
+          </div>
+          <div class="stat-val" id="kpiTotalCommissions">₹0</div>
+          <div class="stat-desc">₹100 per completed referral order</div>
+        </div>
+
+        <div class="stat-card stat-purple">
+          <div class="stat-lbl">
+            <span>Customer Savings</span>
+            <span>🏷️</span>
+          </div>
+          <div class="stat-val" id="kpiCustomerDiscounts">₹0</div>
+          <div class="stat-desc">Total ₹20 discounts given to buyers</div>
+        </div>
+
+        <div class="stat-card stat-amber">
+          <div class="stat-lbl">
+            <span>Pending Payouts</span>
+            <span>⏳</span>
+          </div>
+          <div class="stat-val" id="kpiPendingPayoutsCount">0</div>
+          <div class="stat-desc" id="kpiPendingPayoutsAmt">₹0 awaiting transfer</div>
+        </div>
+
+        <div class="stat-card stat-cyan">
+          <div class="stat-lbl">
+            <span>Total Settled</span>
+            <span>🏦</span>
+          </div>
+          <div class="stat-val" id="kpiTotalSettled">₹0</div>
+          <div class="stat-desc">Transferred to bank accounts</div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           PAYOUT & WITHDRAWAL REQUESTS SECTION (Top-tier Admin Control)
+           ==================================================================== -->
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:30px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+          <div>
+            <div style="font-size:1.35rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:10px;">
+              <span>💳</span> Payout & Withdrawal Requests (பணம் எடுக்கும் கோரிக்கைகள்)
+              <span id="payoutPendingBadgeHeader" style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:50px;">
+                0 Pending
+              </span>
+            </div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-top:4px;">
+              Review partner withdrawal requests, copy verified bank accounts, and mark payouts as completed with bank UTR reference numbers.
+            </div>
+          </div>
+
+          <!-- Status Filters -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="payout-filter-btn active" onclick="setPayoutFilter('all', this)">
+              All Requests (<span id="cntAllPayouts">0</span>)
+            </button>
+            <button type="button" class="payout-filter-btn" onclick="setPayoutFilter('pending', this)">
+              ⏳ Pending (<span id="cntPendingPayouts">0</span>)
+            </button>
+            <button type="button" class="payout-filter-btn" onclick="setPayoutFilter('completed', this)">
+              ✅ Completed (<span id="cntCompletedPayouts">0</span>)
+            </button>
+            <button type="button" class="payout-filter-btn" onclick="setPayoutFilter('rejected', this)">
+              ❌ Rejected (<span id="cntRejectedPayouts">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Payout Requests Table -->
+        <div class="tbl-wrap" style="margin-bottom:0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Request ID & Date</th>
+                <th>Referrer Partner</th>
+                <th>Withdrawal Amount</th>
+                <th>Bank Account & IFSC (வங்கி விவரங்கள்)</th>
+                <th>Status</th>
+                <th>Payment Settlement Action</th>
+              </tr>
+            </thead>
+            <tbody id="payoutRequestsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- HEADING FOR PARTNER DIRECTORY -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h3 style="font-size:1.25rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+            <span>👥</span> Registered Referral Partners Directory
+          </h3>
+          <span style="font-size:0.8rem; color:var(--muted);">All active partner accounts with exact Registration Date & Time</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span id="ledgerModeBadge" style="font-size:0.75rem; font-weight:700; background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:50px;">
+            ● Live Clean Mode (0 Baseline)
+          </span>
+        </div>
+      </div>
+
+      <!-- TOOLBAR & SEARCH -->
+      <div class="toolbar-wrap">
+        <div class="tb-filters">
+          <input type="text" id="partnerSearch" class="tb-input" placeholder="Search by name, username, phone, code..." oninput="filterReferrersTable()" style="width: 280px;">
+          <select id="statusFilter" class="tb-input" onchange="filterReferrersTable()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="unsettled">With Unsettled Balance</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <label style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.82rem; cursor:pointer; user-select:none;">
+            <input type="checkbox" id="showcaseToggleCheckbox" onchange="toggleShowcaseDisplay(this.checked)" style="accent-color:var(--accent); width:15px; height:15px; cursor:pointer;">
+            <span style="color:#cbd5e1; font-weight:600;">👁️ Show 3 Demo Accounts (Showcase)</span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button class="btn-action-green" onclick="exportReferrersExcel()">
+            <span>📊</span> Export to Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- REFERRERS DIRECTORY TABLE -->
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Referrer Partner</th>
+              <th>Referral Code</th>
+              <th>Contact Details</th>
+              <th>Total Orders</th>
+              <th>Total Earned</th>
+              <th>Unsettled Balance</th>
+              <th>Bank & Payout Details</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="referrersTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ====================================================================
+       SETTLE PAYOUT MODAL (Admin payment confirmation with UTR)
+       ==================================================================== -->
+  <div id="settlePayoutModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:550px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>💸</span> Settle & Complete Payout
+        </div>
+        <button class="modal-close" onclick="closeSettlePayoutModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#0f172a; border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.8rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Transfer Amount</span>
+            <span id="settleModalAmount" style="font-size:1.8rem; font-weight:900; color:var(--green);">₹0</span>
+          </div>
+          <div style="font-size:0.85rem; color:#fff; font-weight:700; margin-bottom:4px;" id="settleModalPartner">Partner Name (@username)</div>
+          <div style="font-size:0.78rem; color:var(--muted);" id="settleModalPhone">📞 Phone</div>
+        </div>
+
+        <!-- Bank Details Box with 1-click copy -->
+        <div style="background:rgba(56,189,248,0.06); border:1.5px solid rgba(56,189,248,0.3); border-radius:14px; padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:0.75rem; font-weight:800; color:#38bdf8; text-transform:uppercase;">Bank Account Details</span>
+            <button type="button" class="btn-action-green" style="padding:4px 10px; font-size:0.75rem;" onclick="copySettleModalBankInfo()">
+              📋 Copy All
+            </button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.85rem;">
+            <div>
+              <div style="font-size:0.7rem; color:var(--muted); font-weight:700;">BANK</div>
+              <div id="settleBankName" style="color:#fff; font-weight:700;">-</div>
+            </div>
+            <div>
+              <div style="font-size:0.7rem; color:var(--muted); font-weight:700;">HOLDER</div>
+              <div id="settleHolderName" style="color:#fff; font-weight:700;">-</div>
+            </div>
+            <div>
+              <div style="font-size:0.7rem; color:var(--muted); font-weight:700;">A/C NUMBER</div>
+              <div id="settleAccNo" style="font-family:monospace; color:#38bdf8; font-weight:800; font-size:0.95rem;">-</div>
+            </div>
+            <div>
+              <div style="font-size:0.7rem; color:var(--muted); font-weight:700;">IFSC CODE</div>
+              <div id="settleIfsc" style="font-family:monospace; color:#34d399; font-weight:800; font-size:0.95rem;">-</div>
+            </div>
+          </div>
+          <div id="settleUpiRow" style="margin-top:8px; font-size:0.8rem; color:#a78bfa;"></div>
+        </div>
+
+        <!-- UTR Number Input -->
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:#cbd5e1; margin-bottom:6px; text-transform:uppercase;">
+            Bank Transfer Reference / UTR Number *
+          </label>
+          <input type="text" id="settleTxnRefInput" class="login-input" placeholder="e.g. IMPS26101912345 or UPI Ref" style="font-family:monospace; font-weight:700; font-size:1.05rem; letter-spacing:1px;">
+          <div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">
+            💡 Once submitted, this UTR number will immediately show on the user's dashboard as proof of payment.
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px;">
+          <button type="button" class="btn-nav-link" style="flex:1; justify-content:center; padding:12px;" onclick="closeSettlePayoutModal()">
+            Cancel
+          </button>
+          <button type="button" class="btn-action-green" style="flex:1.5; justify-content:center; padding:12px; font-size:0.95rem;" onclick="confirmSettlePayout()">
+            ✓ Confirm & Mark Paid
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       REFERRER DETAIL MODAL (Deep Dive View as requested)
+       ==================================================================== -->
+  <div id="referrerDetailModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔍</span> Referrer Details & Customer Purchases
+        </div>
+        <button class="modal-close" onclick="closeDetailModal()">×</button>
+      </div>
+
+      <div class="modal-body" id="modalContent">
+        <!-- Dynamically rendered for the clicked referrer -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST FEEDBACK -->
+  <div id="toastNotice">
+    <span>✓</span>
+    <span id="toastMsg">Action completed!</span>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <!-- Central Referrals Service -->
+  <script src="referrals-service.js"></script>
+
+  <script>
+    const ALLOWED_HASHES = [
+      '279eb100ce734d98e869a07ff180b975d686e9874b905ee297f5f3c22cf9858a', // KrmBrite@2026
+      'd5ab3c094e60f8b454d3e28237deacebbb81d906e200451f08d8e2fe00887856'  // KRM#Brite@Admin2026!Secured#892
+    ];
+
+    let allReferrersList = [];
+    let allPayoutRequests = [];
+    let currentPayoutFilter = 'all';
+    let selectedPayoutForSettle = null;
+    let selectedReferrer = null;
+    let showShowcaseMode = false; // Default: clean 0 accounts (real business only)
+
+    // Format registration date and time
+    function formatAccountCreatedDateTime(user) {
+      if (!user) return 'N/A';
+      if (user.createdDate && user.createdTime) {
+        return `${user.createdDate} • ${user.createdTime}`;
+      }
+      if (user.createdAt) {
+        const d = new Date(user.createdAt);
+        if (!isNaN(d.getTime())) {
+          const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+          return `${dateStr} • ${timeStr}`;
+        }
+      }
+      return 'Just now';
+    }
+
+    // Toggle Showcase Display Mode
+    function toggleShowcaseDisplay(checked) {
+      showShowcaseMode = checked;
+      const badge = document.getElementById('ledgerModeBadge');
+      if (badge) {
+        if (checked) {
+          badge.textContent = '👁️ Showcase Demo Mode Active';
+          badge.style.background = 'rgba(245,158,11,0.15)';
+          badge.style.color = '#fbbf24';
+          badge.style.borderColor = 'rgba(245,158,11,0.3)';
+        } else {
+          badge.textContent = '● Live Clean Mode (0 Baseline)';
+          badge.style.background = 'rgba(16,185,129,0.15)';
+          badge.style.color = '#34d399';
+          badge.style.borderColor = 'rgba(16,185,129,0.3)';
+        }
+      }
+      loadDashboardData();
+      showToast(checked ? '👁️ Showcase demo accounts displayed' : '✓ Live Real Business Mode (Clean 0 Baseline)');
+    }
+
+    // Toast
+    function showToast(msg) {
+      const el = document.getElementById('toastNotice');
+      const txt = document.getElementById('toastMsg');
+      txt.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 3500);
+    }
+
+    // Password Hash
+    async function hashPassword(str) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Attempt Admin Login
+    async function attemptLogin() {
+      const input = document.getElementById('adminPassword');
+      const err = document.getElementById('loginErrorMsg');
+      const val = input.value.trim();
+      const hash = await hashPassword(val);
+
+      if (ALLOWED_HASHES.includes(hash)) {
+        sessionStorage.setItem('adminAuth', 'true');
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('adminShell').style.display = 'flex';
+        loadDashboardData();
+      } else {
+        err.textContent = 'Incorrect admin password. Please try again.';
+        err.style.display = 'block';
+      }
+    }
+
+    function adminLogout() {
+      sessionStorage.removeItem('adminAuth');
+      window.location.reload();
+    }
+
+    // Initial Auth Check
+    document.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('adminAuth') === 'true') {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('adminShell').style.display = 'flex';
+        loadDashboardData();
+      }
+    });
+
+    // Real-Time Cross-Tab / Firestore Updates
+    ReferralsService.onUpdate(change => {
+      console.log('[Admin Portal] Real-time referral update received:', change);
+      if (sessionStorage.getItem('adminAuth') === 'true') {
+        loadDashboardData();
+
+        if (change.type === 'payout_requested') {
+          showToast(`🔔 New Withdrawal: ₹${change.payload.amount} requested by @${change.payload.username}!`);
+        } else if (change.type === 'referral_purchase') {
+          showToast(`🎉 New Referral Order! @${change.payload.username} earned ₹100 commission!`);
+        }
+
+        // Live update open deep-dive modal if viewing this partner
+        if (selectedReferrer && change.payload && change.payload.username === selectedReferrer.username) {
+          openReferrerDetails(selectedReferrer.username);
+        }
+      }
+    });
+
+    // Load & Calculate Referral Metrics
+    function loadDashboardData() {
+      allReferrersList = ReferralsService.getAllReferrers(showShowcaseMode);
+      allPayoutRequests = ReferralsService.getPayoutRequests('all', showShowcaseMode);
+
+      let totalReferrers = allReferrersList.length;
+      let totalReferralsCount = 0;
+      let totalCommissions = 0;
+      let totalDiscounts = 0;
+
+      allReferrersList.forEach(u => {
+        const c = u.referralsCount || 0;
+        totalReferralsCount += c;
+        totalCommissions += (u.totalEarned || 0);
+        totalDiscounts += (c * 20);
+      });
+
+      // Calculate Payout Request Stats
+      const pendingPayouts = allPayoutRequests.filter(p => p.status === 'pending');
+      const completedPayouts = allPayoutRequests.filter(p => p.status === 'completed');
+      const rejectedPayouts = allPayoutRequests.filter(p => p.status === 'rejected');
+
+      const pendingAmount = pendingPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const settledAmount = completedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+      document.getElementById('kpiTotalReferrers').textContent = totalReferrers;
+      document.getElementById('kpiTotalReferrals').textContent = totalReferralsCount;
+      document.getElementById('kpiTotalCommissions').textContent = `₹${totalCommissions.toLocaleString('en-IN')}`;
+      document.getElementById('kpiCustomerDiscounts').textContent = `₹${totalDiscounts.toLocaleString('en-IN')}`;
+
+      const kpiPendingCountEl = document.getElementById('kpiPendingPayoutsCount');
+      if (kpiPendingCountEl) kpiPendingCountEl.textContent = pendingPayouts.length;
+      const kpiPendingAmtEl = document.getElementById('kpiPendingPayoutsAmt');
+      if (kpiPendingAmtEl) kpiPendingAmtEl.textContent = `₹${pendingAmount.toLocaleString('en-IN')} awaiting transfer`;
+      const kpiSettledEl = document.getElementById('kpiTotalSettled');
+      if (kpiSettledEl) kpiSettledEl.textContent = `₹${settledAmount.toLocaleString('en-IN')}`;
+
+      const hdrPendingBadge = document.getElementById('payoutPendingBadgeHeader');
+      if (hdrPendingBadge) {
+        hdrPendingBadge.textContent = `${pendingPayouts.length} Pending`;
+        hdrPendingBadge.style.display = pendingPayouts.length > 0 ? 'inline-block' : 'none';
+      }
+
+      // Filter count tabs
+      const elAll = document.getElementById('cntAllPayouts');
+      if (elAll) elAll.textContent = allPayoutRequests.length;
+      const elPend = document.getElementById('cntPendingPayouts');
+      if (elPend) elPend.textContent = pendingPayouts.length;
+      const elComp = document.getElementById('cntCompletedPayouts');
+      if (elComp) elComp.textContent = completedPayouts.length;
+      const elRej = document.getElementById('cntRejectedPayouts');
+      if (elRej) elRej.textContent = rejectedPayouts.length;
+
+      renderReferrersTable(allReferrersList);
+      renderPayoutRequestsTable(currentPayoutFilter);
+    }
+
+    // =========================================================================
+    // PAYOUT REQUESTS SECTION RENDERING & ACTIONS
+    // =========================================================================
+    function setPayoutFilter(status, btnElement) {
+      currentPayoutFilter = status;
+      document.querySelectorAll('.payout-filter-btn').forEach(b => b.classList.remove('active'));
+      if (btnElement) btnElement.classList.add('active');
+      renderPayoutRequestsTable(currentPayoutFilter);
+    }
+
+    function renderPayoutRequestsTable(filter) {
+      const tbody = document.getElementById('payoutRequestsTableBody');
+      if (!tbody) return;
+
+      let list = allPayoutRequests;
+      if (filter && filter !== 'all') {
+        list = allPayoutRequests.filter(p => p.status === filter);
+      }
+
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--muted);">
+              <div style="font-size: 2.2rem; margin-bottom: 10px;">💳</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 6px;">No ${filter === 'all' ? '' : filter} Payout Requests Yet</div>
+              <div style="font-size: 0.85rem; max-width: 480px; margin: 0 auto; line-height: 1.6; color: #94a3b8;">
+                When real partners accumulate earnings from referral orders and request withdrawals, their bank transfer requests will appear here for review and settlement.
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map(p => {
+        const b = p.bankDetails || {};
+        const isPending = p.status === 'pending';
+        const isCompleted = p.status === 'completed';
+
+        let statusHtml = '';
+        if (isPending) {
+          statusHtml = `<span style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:4px 10px; border-radius:50px; font-size:0.75rem; font-weight:700;">⏳ Pending Payment</span>`;
+        } else if (isCompleted) {
+          statusHtml = `
+            <span style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:4px 10px; border-radius:50px; font-size:0.75rem; font-weight:700;">✓ Paid & Transferred</span>
+            <div style="font-family:monospace; font-size:0.72rem; color:#94a3b8; margin-top:4px;">UTR: <span style="color:#38bdf8;">${p.txnRef || 'N/A'}</span></div>
+          `;
+        } else {
+          statusHtml = `
+            <span style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:50px; font-size:0.75rem; font-weight:700;">✕ Declined / Refunded</span>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">${p.rejectReason || 'Balance refunded'}</div>
+          `;
+        }
+
+        let actionHtml = '';
+        if (isPending) {
+          actionHtml = `
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn-action-pay" onclick="openSettlePayoutModal('${p.id}')">
+                💸 Settle & Mark Paid
+              </button>
+              <button type="button" class="btn-action-reject" onclick="handleRejectPayout('${p.id}')">
+                ❌ Reject
+              </button>
+            </div>
+          `;
+        } else if (isCompleted) {
+          actionHtml = `
+            <div style="font-size:0.8rem; color:#34d399; font-weight:700; display:flex; align-items:center; gap:4px;">
+              <span>✓</span> Settled by Admin
+            </div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">
+              ${p.completedAt ? new Date(p.completedAt).toLocaleString('en-IN') : ''}
+            </div>
+          `;
+        } else {
+          actionHtml = `
+            <div style="font-size:0.8rem; color:#fca5a5; font-weight:700;">
+              Refunded to Partner
+            </div>
+          `;
+        }
+
+        return `
+          <tr>
+            <td>
+              <div style="font-family:monospace; font-weight:800; color:#38bdf8; font-size:0.9rem;">${p.id}</div>
+              <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">📅 ${p.date || ''} ${p.time || ''}</div>
+            </td>
+            <td>
+              <strong style="color:#fff; font-size:0.95rem;">${p.name || 'Partner'}</strong>
+              <div style="font-size:0.78rem; color:var(--muted);">@${p.username}</div>
+              <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">📞 ${p.phone || '-'}</div>
+            </td>
+            <td>
+              <div style="font-size:1.2rem; font-weight:900; color:var(--green);">
+                ₹${(Number(p.amount) || 0).toLocaleString('en-IN')}
+              </div>
+            </td>
+            <td>
+              <div style="background:rgba(15,23,42,0.85); padding:8px 12px; border-radius:10px; border:1px solid rgba(56,189,248,0.25); min-width:220px;">
+                <div style="font-size:0.75rem; color:#cbd5e1; font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+                  <span>🏦 ${b.bankName || 'Bank'}</span>
+                  <button type="button" onclick="copyPayoutBankDetails('${p.id}')" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-size:0.7rem; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:700;">📋 Copy</button>
+                </div>
+                <div style="font-size:0.76rem; color:#94a3b8; margin-top:2px;">Holder: <strong style="color:#fff;">${b.accountHolder || p.name}</strong></div>
+                <div style="font-family:monospace; font-size:0.85rem; color:#38bdf8; font-weight:800; margin-top:2px;">
+                  A/C: ${b.accountNumber || 'N/A'}
+                </div>
+                <div style="font-family:monospace; font-size:0.8rem; color:#34d399; font-weight:800; margin-top:1px;">
+                  IFSC: ${b.ifscCode || 'N/A'}
+                </div>
+                ${b.upiId ? `<div style="font-size:0.72rem; color:#a78bfa; margin-top:2px;">UPI: ${b.upiId}</div>` : ''}
+              </div>
+            </td>
+            <td>${statusHtml}</td>
+            <td>${actionHtml}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function copyPayoutBankDetails(payoutId) {
+      const p = allPayoutRequests.find(x => x.id === payoutId);
+      if (!p) return;
+      const b = p.bankDetails || {};
+      const lines = [
+        `KRM Brite Payout Request: ${p.id}`,
+        `Partner Name: ${p.name} (@${p.username})`,
+        `Withdrawal Amount: ₹${p.amount}`,
+        `Bank Name: ${b.bankName || 'Bank'}`,
+        `Account Holder: ${b.accountHolder || p.name}`,
+        `Account Number: ${b.accountNumber || 'N/A'}`,
+        `IFSC Code: ${b.ifscCode || 'N/A'}`,
+        `UPI ID: ${b.upiId || 'N/A'}`
+      ];
+      navigator.clipboard.writeText(lines.join('\n'));
+      showToast('✓ Bank & payout details copied to clipboard!');
+    }
+
+    function openSettlePayoutModal(payoutId) {
+      const p = allPayoutRequests.find(x => x.id === payoutId);
+      if (!p) return;
+      selectedPayoutForSettle = p;
+      const b = p.bankDetails || {};
+
+      document.getElementById('settleModalAmount').textContent = `₹${(Number(p.amount) || 0).toLocaleString('en-IN')}`;
+      document.getElementById('settleModalPartner').textContent = `${p.name} (@${p.username})`;
+      document.getElementById('settleModalPhone').textContent = `📞 ${p.phone || '-'}`;
+
+      document.getElementById('settleBankName').textContent = b.bankName || 'Bank';
+      document.getElementById('settleHolderName').textContent = b.accountHolder || p.name;
+      document.getElementById('settleAccNo').textContent = b.accountNumber || 'N/A';
+      document.getElementById('settleIfsc').textContent = b.ifscCode || 'N/A';
+
+      const upiRow = document.getElementById('settleUpiRow');
+      if (b.upiId) {
+        upiRow.textContent = `UPI ID: ${b.upiId}`;
+        upiRow.style.display = 'block';
+      } else {
+        upiRow.style.display = 'none';
+      }
+
+      const txnInput = document.getElementById('settleTxnRefInput');
+      txnInput.value = 'IMPS' + Date.now().toString().slice(-8);
+
+      document.getElementById('settlePayoutModal').style.display = 'flex';
+      txnInput.focus();
+    }
+
+    function closeSettlePayoutModal() {
+      document.getElementById('settlePayoutModal').style.display = 'none';
+      selectedPayoutForSettle = null;
+    }
+
+    function copySettleModalBankInfo() {
+      if (!selectedPayoutForSettle) return;
+      copyPayoutBankDetails(selectedPayoutForSettle.id);
+    }
+
+    function confirmSettlePayout() {
+      if (!selectedPayoutForSettle) return;
+      const txnRef = document.getElementById('settleTxnRefInput').value.trim();
+      if (!txnRef) {
+        alert('Please enter the Bank UTR / Transaction Reference number as proof of payment.');
+        return;
+      }
+
+      try {
+        ReferralsService.adminCompletePayout(selectedPayoutForSettle.id, txnRef);
+        showToast(`✓ Payout ${selectedPayoutForSettle.id} marked as Paid & Transferred!`);
+        closeSettlePayoutModal();
+        loadDashboardData();
+      } catch(e) {
+        alert(e.message);
+      }
+    }
+
+    function handleRejectPayout(payoutId) {
+      const p = allPayoutRequests.find(x => x.id === payoutId);
+      if (!p) return;
+      const reason = prompt(
+        `Reject and Refund Payout Request ${p.id} (₹${p.amount}) for ${p.name}?\n\nEnter reason (this will be shown to partner, and ₹${p.amount} will be refunded to their available balance):`,
+        'Bank account or IFSC code mismatch. Please verify in your dashboard and request again.'
+      );
+      if (reason === null) return;
+
+      try {
+        ReferralsService.adminRejectPayout(payoutId, reason.trim() || 'Declined by administrator');
+        showToast(`✓ Payout ${p.id} declined. ₹${p.amount} refunded to partner balance.`);
+        loadDashboardData();
+      } catch(e) {
+        alert(e.message);
+      }
+    }
+
+    // Render Table of Referrers
+    function renderReferrersTable(list) {
+      const tbody = document.getElementById('referrersTableBody');
+
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 48px 24px; color: var(--muted);">
+              <div style="font-size: 2.2rem; margin-bottom: 10px;">👥</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 6px;">No Referral Partners Registered Yet</div>
+              <div style="font-size: 0.85rem; max-width: 500px; margin: 0 auto; line-height: 1.6; color: #94a3b8;">
+                Real partner accounts created on <a href="earn.html" target="_blank" style="color: #38bdf8; text-decoration: underline;">earn.html</a> will appear here automatically with their exact Registration Date & Time, contact details, and bank account info.
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map(u => {
+        const total = u.totalEarned || 0;
+        const pending = u.pendingBalance !== undefined ? u.pendingBalance : total;
+        const initial = (u.name || 'U')[0].toUpperCase();
+        const b = u.bankDetails || {};
+        const regDateTime = formatAccountCreatedDateTime(u);
+
+        return `
+          <tr>
+            <td>
+              <div class="user-col">
+                <div class="user-avatar-sm">${initial}</div>
+                <div>
+                  <div style="font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    <span>${u.name}</span>
+                    ${u.isShowcase ? '<span style="background:rgba(245,158,11,0.2); color:#fbbf24; font-size:0.65rem; padding:1px 6px; border-radius:4px; font-weight:700;">Demo</span>' : ''}
+                  </div>
+                  <div style="font-size: 0.78rem; color: var(--muted);">@${u.username}</div>
+                  <div style="font-size: 0.74rem; color: #38bdf8; font-weight: 600; margin-top: 2px;">
+                    📅 Reg: ${regDateTime}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td><span class="ref-code-badge">${u.referralCode}</span></td>
+            <td>
+              <div style="font-size: 0.85rem;">📞 ${u.phone || '-'}</div>
+              <div style="font-size: 0.78rem; color: var(--muted);">${u.email || ''}</div>
+            </td>
+            <td>
+              <strong style="color: #38bdf8; font-size: 1rem;">${u.referralsCount || 0}</strong> Orders
+            </td>
+            <td>
+              <strong style="color: #fff;">₹${total.toLocaleString('en-IN')}</strong>
+            </td>
+            <td>
+              <span class="balance-badge">₹${pending.toLocaleString('en-IN')}</span>
+            </td>
+            <td>
+              ${b.accountNumber ? `
+                <div style="background: rgba(15,23,42,0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.25);">
+                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
+                    <span>🏦</span> ${b.bankName || 'Bank Account'}
+                  </div>
+                  <div style="font-family: monospace; font-size: 0.86rem; font-weight: 700; color: #38bdf8; margin-top: 2px;">
+                    A/C: ${b.accountNumber}
+                  </div>
+                  <div style="font-family: monospace; font-size: 0.78rem; font-weight: 700; color: #34d399; margin-top: 1px;">
+                    IFSC: ${b.ifscCode}
+                  </div>
+                  ${b.upiId ? `<div style="font-size: 0.72rem; color: #a78bfa; margin-top: 2px;">UPI: ${b.upiId}</div>` : ''}
+                </div>
+              ` : (u.upiId ? `
+                <div style="background: rgba(15,23,42,0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(245,158,11,0.25);">
+                  <div style="font-size: 0.72rem; color: #f59e0b; font-weight: 700;">📱 UPI Only</div>
+                  <code style="font-size: 0.82rem; color: #e2e8f0;">${u.upiId}</code>
+                  <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">Bank A/C not added</div>
+                </div>
+              ` : `
+                <span style="color: var(--muted); font-size: 0.8rem; background: rgba(255,255,255,0.04); padding: 5px 10px; border-radius: 6px; display: inline-block;">
+                  ⚠️ Bank Details Pending
+                </span>
+              `)}
+            </td>
+            <td>
+              <span class="status-pill ${u.status === 'active' ? 'status-active' : 'status-inactive'}">
+                ${u.status === 'active' ? 'Active' : 'Inactive'}
+              </span>
+            </td>
+            <td>
+              <button class="btn-view-details" onclick="openReferrerDetails('${u.username}')">
+                <span>🔍</span> View Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Filter Table
+    function filterReferrersTable() {
+      const q = document.getElementById('partnerSearch').value.toLowerCase().trim();
+      const status = document.getElementById('statusFilter').value;
+
+      let filtered = allReferrersList.filter(u => {
+        const b = u.bankDetails || {};
+        const matchesQuery = (
+          (u.name || '').toLowerCase().includes(q) ||
+          (u.username || '').toLowerCase().includes(q) ||
+          (u.phone || '').toLowerCase().includes(q) ||
+          (u.referralCode || '').toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q) ||
+          (b.accountNumber || '').toLowerCase().includes(q) ||
+          (b.ifscCode || '').toLowerCase().includes(q) ||
+          (b.bankName || '').toLowerCase().includes(q)
+        );
+
+        if (!matchesQuery) return false;
+
+        if (status === 'active') return u.status === 'active';
+        if (status === 'inactive') return u.status === 'inactive';
+        if (status === 'unsettled') return (u.pendingBalance || 0) > 0;
+        return true;
+      });
+
+      renderReferrersTable(filtered);
+    }
+
+    // Copy partner bank details helper
+    function copyPartnerBankInfo(username) {
+      const u = ReferralsService.getUserByUsername(username);
+      if (!u) return;
+      const b = u.bankDetails || {};
+      const lines = [
+        `KRM Brite Referrer Bank Details:`,
+        `Partner Name: ${u.name} (@${u.username})`,
+        `Account Holder: ${b.accountHolder || u.name}`,
+        `Bank Name: ${b.bankName || 'Bank'}`,
+        `Account Number: ${b.accountNumber || 'N/A'}`,
+        `IFSC Code: ${b.ifscCode || 'N/A'}`,
+        `UPI ID: ${b.upiId || u.upiId || 'N/A'}`
+      ];
+      navigator.clipboard.writeText(lines.join('\n'));
+      showToast('✓ Complete Bank Details copied to clipboard!');
+    }
+
+    // Open Deep Dive Modal for Referrer
+    function openReferrerDetails(username) {
+      selectedReferrer = ReferralsService.getUserByUsername(username);
+      if (!selectedReferrer) return;
+
+      const total = selectedReferrer.totalEarned || 0;
+      const pending = selectedReferrer.pendingBalance !== undefined ? selectedReferrer.pendingBalance : total;
+      const rawRefs = selectedReferrer.referrals || [];
+      const refs = (typeof ReferralsService !== 'undefined' && ReferralsService.filterMaxReferralsPerPhone)
+        ? ReferralsService.filterMaxReferralsPerPhone(rawRefs, 2)
+        : rawRefs;
+
+      const modalContent = document.getElementById('modalContent');
+      modalContent.innerHTML = `
+        <!-- Profile Overview Card -->
+        <div class="detail-profile-card">
+          <div class="dp-item">
+            <label>Full Name</label>
+            <val>${selectedReferrer.name}</val>
+          </div>
+          <div class="dp-item">
+            <label>Username</label>
+            <val>@${selectedReferrer.username}</val>
+          </div>
+          <div class="dp-item">
+            <label>Referral Code</label>
+            <val style="color: #38bdf8;">${selectedReferrer.referralCode}</val>
+          </div>
+          <div class="dp-item">
+            <label>Mobile Number</label>
+            <val>${selectedReferrer.phone || '-'}</val>
+          </div>
+          <div class="dp-item">
+            <label>Email Address</label>
+            <val>${selectedReferrer.email || '-'}</val>
+          </div>
+          <div class="dp-item">
+            <label>Account Status</label>
+            <val style="color: ${selectedReferrer.status === 'active' ? '#34d399' : '#fca5a5'};">
+              ${selectedReferrer.status === 'active' ? 'Active Partner' : 'Suspended'}
+            </val>
+          </div>
+
+          <!-- PROMINENT ACCOUNT REGISTRATION DATE & TIME (User Request) -->
+          <div class="dp-item" style="grid-column: 1 / -1; background: rgba(56,189,248,0.08); padding: 14px 18px; border-radius: 12px; border: 1.5px solid rgba(56,189,248,0.3); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <label style="color: #38bdf8; font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <span>📅</span> Account Created Date & Time (கணக்கு உருவாக்கிய தேதி & நேரம்)
+              </label>
+              <val style="color: #ffffff; font-size: 1.15rem; font-weight: 800; font-family: monospace; letter-spacing: 0.5px;">
+                ${formatAccountCreatedDateTime(selectedReferrer)}
+              </val>
+            </div>
+            ${selectedReferrer.isShowcase ? '<span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:0.75rem; padding:4px 12px; border-radius:50px; font-weight:700;">Demo / Showcase Account</span>' : '<span style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); font-size:0.75rem; padding:4px 12px; border-radius:50px; font-weight:700;">✓ Live Partner Registration</span>'}
+          </div>
+        </div>
+
+        <!-- BANK ACCOUNT & IFSC CARD (Prominently Highlighted for Admin) -->
+        <div style="background: linear-gradient(145deg, #162032, #0f172a); border: 1.5px solid rgba(56,189,248,0.35); border-radius: 14px; padding: 20px; margin-bottom: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div style="font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>🏦</span> Partner's Bank Account & IFSC Details (வங்கி விவரங்கள்)
+              ${b.accountNumber ? '<span style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; font-size:0.72rem; padding:3px 8px; border-radius:50px;">✓ Manually Verified & Confirmed</span>' : '<span style="background:rgba(239,68,68,0.15); color:#fca5a5; font-size:0.72rem; padding:3px 8px; border-radius:50px;">⚠️ Not Provided Yet</span>'}
+            </div>
+            ${b.accountNumber ? `
+              <button class="btn-action-green" style="padding: 6px 14px; font-size: 0.78rem;" onclick="copyPartnerBankInfo('${selectedReferrer.username}')">
+                📋 Copy All Bank Details
+              </button>
+            ` : ''}
+          </div>
+
+          ${b.accountNumber ? `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+              <div style="background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Bank Name</div>
+                <div style="font-size:0.95rem; font-weight:700; color:#ffffff; margin-top:3px;">${b.bankName || 'Specified Bank'}</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Account Holder Name</div>
+                <div style="font-size:0.95rem; font-weight:700; color:#ffffff; margin-top:3px;">${b.accountHolder || selectedReferrer.name}</div>
+              </div>
+              <div style="background: rgba(56,189,248,0.08); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(56,189,248,0.3);">
+                <div style="font-size:0.72rem; font-weight:700; color:#38bdf8; text-transform:uppercase;">Bank Account Number</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px;">
+                  <span style="font-family:monospace; font-size:1.15rem; font-weight:800; color:#fff; letter-spacing:1px;">${b.accountNumber}</span>
+                  <button type="button" onclick="navigator.clipboard.writeText('${b.accountNumber}'); showToast('✓ Account Number copied!')" style="background:rgba(255,255,255,0.1); border:none; color:#38bdf8; padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:700;">Copy</button>
+                </div>
+              </div>
+              <div style="background: rgba(16,185,129,0.08); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.3);">
+                <div style="font-size:0.72rem; font-weight:700; color:#34d399; text-transform:uppercase;">Bank IFSC Code</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px;">
+                  <span style="font-family:monospace; font-size:1.15rem; font-weight:800; color:#fff; letter-spacing:1px;">${b.ifscCode}</span>
+                  <button type="button" onclick="navigator.clipboard.writeText('${b.ifscCode}'); showToast('✓ IFSC Code copied!')" style="background:rgba(255,255,255,0.1); border:none; color:#34d399; padding:3px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:700;">Copy</button>
+                </div>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase;">UPI ID</div>
+                <div style="font-size:0.95rem; font-weight:700; color:#e2e8f0; margin-top:3px;">${b.upiId || selectedReferrer.upiId || 'Not added'}</div>
+              </div>
+            </div>
+          ` : `
+            <div style="color: var(--muted); font-size: 0.88rem; padding: 12px 0;">
+              ⚠️ This partner has not yet added their Bank Account & IFSC Code in their partner portal. UPI ID: <code>${selectedReferrer.upiId || 'None'}</code>.
+            </div>
+          `}
+        </div>
+
+
+        <!-- CUSTOMERS WHO USED THIS CODE TABLE (As specifically requested!) -->
+        <h4 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 12px; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>👥</span> Customers Who Used Code "${selectedReferrer.referralCode}" (${refs.length})
+        </h4>
+
+        <div class="tbl-wrap" style="margin-bottom: 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Order ID</th>
+                <th>Order Amount</th>
+                <th>Customer Saved</th>
+                <th>Referrer Earned</th>
+                <th>Purchase Date & Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${refs.length === 0 ? `
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 24px; color: var(--muted);">
+                    No customers have purchased with this code yet.
+                  </td>
+                </tr>
+              ` : refs.map(r => `
+                <tr>
+                  <td>
+                    <strong style="color: #fff;">${r.customerName || 'Customer'}</strong>
+                    <div style="font-size: 0.75rem; color: var(--muted);">${r.customerPhone || ''}</div>
+                  </td>
+                  <td><code>${r.orderId || '-'}</code></td>
+                  <td>${r.orderTotal || '₹0'}</td>
+                  <td><span style="color: #fca5a5; font-weight: 700;">-₹${r.discount || 20}</span></td>
+                  <td><strong style="color: var(--green); font-size: 0.95rem;">+₹${r.commission || 100}</strong></td>
+                  <td>
+                    <div>${r.date || ''}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted);">${r.time || ''}</div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('referrerDetailModal').style.display = 'flex';
+    }
+
+    function closeDetailModal() {
+      document.getElementById('referrerDetailModal').style.display = 'none';
+      selectedReferrer = null;
+    }
+
+    // Admin Settle / Payout Trigger
+    function handleAdminSettle(username, amount) {
+      const u = ReferralsService.getUserByUsername(username);
+      if (!u) return;
+      const b = u.bankDetails || {};
+
+      let detailsPrompt = `PAYOUT SETTLEMENT FOR ${u.name.toUpperCase()}:\n\n` +
+        `Amount to Transfer: ₹${amount}\n\n`;
+
+      if (b.accountNumber) {
+        detailsPrompt += `--- BANK ACCOUNT DETAILS ---\n` +
+          `Bank: ${b.bankName || 'Bank'}\n` +
+          `A/C Holder: ${b.accountHolder || u.name}\n` +
+          `Account Number: ${b.accountNumber}\n` +
+          `IFSC Code: ${b.ifscCode}\n` +
+          (b.upiId ? `UPI ID: ${b.upiId}\n` : '') +
+          `\n`;
+      } else if (u.upiId) {
+        detailsPrompt += `UPI ID: ${u.upiId}\n\n`;
+      } else {
+        detailsPrompt += `⚠️ No bank or UPI details added by partner!\n\n`;
+      }
+
+      detailsPrompt += `Please initiate NEFT/IMPS/UPI transfer of ₹${amount} and enter the Bank Reference Number / UTR / Txn ID below:`;
+
+      const txnRef = prompt(detailsPrompt, 'NEFT-' + Date.now().toString().slice(-8));
+      if (!txnRef) return;
+
+      try {
+        ReferralsService.adminSettleBalance(username, amount, txnRef);
+        showToast(`✓ Settled ₹${amount} for ${u.name}!`);
+        loadDashboardData();
+        openReferrerDetails(username);
+      } catch(e) {
+        alert(e.message);
+      }
+    }
+
+    // Toggle Referrer Active / Inactive
+    function handleToggleStatus(username) {
+      try {
+        const updated = ReferralsService.toggleUserStatus(username);
+        showToast(`User status updated to ${updated.status}!`);
+        loadDashboardData();
+        openReferrerDetails(username);
+      } catch(e) {
+        alert(e.message);
+      }
+    }
+
+    // Export to Excel
+    function exportReferrersExcel() {
+      const data = allReferrersList.map(u => {
+        const b = u.bankDetails || {};
+        return {
+          "Name": u.name,
+          "Username": u.username,
+          "Referral Code": u.referralCode,
+          "Registered Date & Time": formatAccountCreatedDateTime(u),
+          "Phone": u.phone,
+          "Email": u.email,
+          "Account Type": u.isShowcase ? "Demo Showcase" : "Real Partner",
+          "Bank Name": b.bankName || '',
+          "Account Holder": b.accountHolder || u.name,
+          "Bank Account Number": b.accountNumber ? `'${b.accountNumber}` : '',
+          "IFSC Code": b.ifscCode || '',
+          "UPI ID": b.upiId || u.upiId || '',
+          "Total Orders Referred": u.referralsCount || 0,
+          "Total Earned (INR)": u.totalEarned || 0,
+          "Pending Balance (INR)": u.pendingBalance !== undefined ? u.pendingBalance : u.totalEarned,
+          "Status": u.status
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Referral Partners");
+      XLSX.writeFile(wb, `KRM_Brite_Referrals_${Date.now()}.xlsx`);
+      showToast("Spreadsheet downloaded!");
+    }
+  </script>
+</body>
+</html>
