@@ -1,0 +1,8 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/earn", "destination": "/earn.html" },
+    { "source": "/admin-referrals", "destination": "/admin-referrals.html" },
+    { "source": "/profile", "destination": "/profile.html" }
+  ]
+}
