@@ -75,17 +75,6 @@
                         <input type="text" id="address2" placeholder="Locality, Area, Landmark">
                     </div>
 
-                    <div class="row">
-                        <div class="input-group half">
-                            <label for="district">District</label>
-                            <input type="text" id="district" required placeholder="Your District">
-                        </div>
-                        <div class="input-group half">
-                            <label for="pincode">Pincode</label>
-                            <input type="number" id="pincode" required placeholder="6 digit code">
-                        </div>
-                    </div>
-
                     <div class="input-group">
                         <label for="state">State</label>
                         <select id="state" required>
@@ -127,6 +116,29 @@
                             <option value="Lakshadweep">Lakshadweep</option>
                             <option value="Puducherry">Puducherry</option>
                         </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="input-group half district-group">
+                            <label for="district">District</label>
+                            <div class="searchable-district-container" id="searchableDistrictContainer">
+                                <input type="text" id="district" required placeholder="Select District" readonly autocomplete="off">
+                                <div class="district-dropdown-menu" id="districtDropdownMenu" style="display: none;">
+                                    <div class="district-search-header">
+                                        <span class="search-lens">🔍</span>
+                                        <input type="text" id="districtSearchBox" placeholder="Search district..." autocomplete="off">
+                                        <button type="button" id="districtClearBtn" class="district-clear-btn" style="display:none;" aria-label="Clear search">✕</button>
+                                    </div>
+                                    <div class="district-items-list" id="districtItemsList" role="listbox">
+                                        <!-- District items injected via JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group half">
+                            <label for="pincode">Pincode</label>
+                            <input type="number" id="pincode" required placeholder="6 digit code">
+                        </div>
                     </div>
 
                     <div class="input-group">

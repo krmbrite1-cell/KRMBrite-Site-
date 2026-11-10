@@ -324,11 +324,12 @@ exports.handler = async function(event, context) {
           };
         }
 
-        // Frontend saved it in the meantime — just ensure it's marked Paid
+        // Frontend saved it in the meantime — check if already marked Paid or Printed
         const retryStatus = orderDocRetry.fields?.status?.stringValue;
-        if (retryStatus === 'Paid' || retryStatus === 'paid') {
-          console.log(`Order ${orderId} already Paid (frontend saved it). Nothing to do.`);
-          return { statusCode: 200, headers, body: JSON.stringify({ status: 'already_paid', orderId }) };
+        const isPrintedRetry = orderDocRetry.fields?.isPrinted?.booleanValue === true;
+        if (retryStatus === 'Paid' || retryStatus === 'paid' || isPrintedRetry) {
+          console.log(`Order ${orderId} already Paid/Printed (frontend saved it). Nothing to do.`);
+          return { statusCode: 200, headers, body: JSON.stringify({ status: 'already_paid_or_printed', orderId }) };
         }
         await markOrderAsPaid(orderDocRetry.name, paymentId);
         console.log(`🎉 SUCCESS: Order ${orderId} updated to 'Paid' after frontend save!`);
@@ -336,11 +337,12 @@ exports.handler = async function(event, context) {
       }
 
       const currentStatus = orderDoc.fields?.status?.stringValue;
-      console.log(`Current status in Firestore for ${orderId}: '${currentStatus}'`);
+      const isPrintedDoc = orderDoc.fields?.isPrinted?.booleanValue === true;
+      console.log(`Current status in Firestore for ${orderId}: '${currentStatus}', isPrinted: ${isPrintedDoc}`);
 
-      if (currentStatus === 'Paid' || currentStatus === 'paid') {
-        console.log(`Order ${orderId} is already marked as Paid. Nothing to do.`);
-        return { statusCode: 200, headers, body: JSON.stringify({ status: 'already_paid', orderId }) };
+      if (currentStatus === 'Paid' || currentStatus === 'paid' || isPrintedDoc) {
+        console.log(`Order ${orderId} is already marked as Paid or Printed. Nothing to do.`);
+        return { statusCode: 200, headers, body: JSON.stringify({ status: 'already_paid_or_printed', orderId }) };
       }
 
       // Update to 'Paid' — but do NOT overwrite id or other fields the frontend set

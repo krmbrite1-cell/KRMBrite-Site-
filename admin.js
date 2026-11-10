@@ -230,6 +230,73 @@ function isPaidOrder(o) {
   return s === 'paid';
 }
 
+// 🛡️ PERSISTENT PRINTED CACHE (localStorage):
+// Prevents any already printed orders from EVER jumping back into "New Orders",
+// even if a webhook or external update later touches Firestore!
+function getPrintedOrderCache() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('krm_admin_printed_orders') || '[]'));
+  } catch(e) { return new Set(); }
+}
+
+function markOrdersPrintedInCache(idList) {
+  try {
+    const cache = getPrintedOrderCache();
+    idList.filter(Boolean).forEach(id => cache.add(String(id).trim()));
+    localStorage.setItem('krm_admin_printed_orders', JSON.stringify(Array.from(cache)));
+  } catch(e) {}
+}
+
+// ⏱️ RELIABLE TIMESTAMP EXTRACTOR (Strict Newest-First Ordering):
+// Extracts exact epoch milliseconds from any order date format for perfect chronological sorting
+function getOrderTimestamp(o) {
+  if (!o) return 0;
+  // 1. Firestore Timestamp instance
+  if (o.createdAt && typeof o.createdAt.toDate === 'function') {
+    return o.createdAt.toDate().getTime();
+  }
+  if (o.createdAt && typeof o.createdAt.toMillis === 'function') {
+    return o.createdAt.toMillis();
+  }
+  if (o.createdAt && typeof o.createdAt.seconds === 'number') {
+    return o.createdAt.seconds * 1000;
+  }
+  // 2. Direct ISO string or Date object in createdAt
+  if (typeof o.createdAt === 'string') {
+    const t = new Date(o.createdAt).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  // 3. Numeric timestampMs
+  if (o.timestampMs && !isNaN(Number(o.timestampMs))) {
+    return Number(o.timestampMs);
+  }
+  // 4. paidAt timestamp / ISO string
+  if (o.paidAt) {
+    if (typeof o.paidAt.toDate === 'function') return o.paidAt.toDate().getTime();
+    const t = new Date(o.paidAt).getTime();
+    if (!isNaN(t) && t > 0) return t;
+  }
+  // 5. Epoch timestamp embedded in order ID (e.g. ORD-1731234567890)
+  if (o.id && typeof o.id === 'string' && o.id.startsWith('ORD-')) {
+    const digits = o.id.replace(/\D/g, '');
+    if (digits.length >= 10) {
+      const num = parseInt(digits.slice(0, 13), 10);
+      if (!isNaN(num) && num > 1600000000000) return num;
+    }
+  }
+  // 6. Parsed date + time strings (e.g. '10/11/2026' & '03:00 PM')
+  if (o.date) {
+    try {
+      const parts = String(o.date).split(/[\/\-]/);
+      if (parts.length === 3) {
+        const d = parts[0].length === 4 ? new Date(o.date) : new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        if (!isNaN(d.getTime())) return d.getTime();
+      }
+    } catch(e) {}
+  }
+  return 0;
+}
+
 function startOrdersListener() {
   const tbodyNew = document.getElementById('ordersVTableNew');
   const tbodyPrinted = document.getElementById('ordersVTablePrinted');
@@ -237,18 +304,36 @@ function startOrdersListener() {
   if (tbodyPrinted) tbodyPrinted.innerHTML = `<tr><td colspan="8" class="loading-cell"><div class="spinner"></div> Loading orders…</td></tr>`;
   unsubOrders = db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snap => {
     const rawList = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    const printedCache = getPrintedOrderCache();
 
     // Safeguard Deduplication & Merging:
-    // Any documents sharing razorpayOrderId OR id belong to the same customer order!
+    // Any documents sharing razorpayOrderId, razorpayPaymentId, id, or firestoreId belong to the same customer order!
     const orderMap = new Map();
     for (const ord of rawList) {
-      // Find if this order matches an existing entry by razorpayOrderId, id, or firestoreId
+      // 1. Check if this order or any of its keys were previously printed and locked in cache
+      const isCachedPrinted = printedCache.has(String(ord.firestoreId)) ||
+                             (ord.id && printedCache.has(String(ord.id))) ||
+                             (ord.razorpayOrderId && printedCache.has(String(ord.razorpayOrderId))) ||
+                             (ord.razorpayPaymentId && printedCache.has(String(ord.razorpayPaymentId)));
+
+      if (isCachedPrinted) {
+        ord.isPrinted = true;
+      }
+
+      // 2. Find if this order matches an existing entry by razorpayOrderId, id, firestoreId, paymentId, or customer details
       let matchKey = null;
       for (const [k, existing] of orderMap.entries()) {
         const sameRzp = ord.razorpayOrderId && existing.razorpayOrderId && ord.razorpayOrderId === existing.razorpayOrderId;
         const sameId = ord.id && existing.id && ord.id === existing.id;
         const sameDoc = ord.firestoreId && (ord.firestoreId === existing.firestoreId || (existing.allFirestoreIds && existing.allFirestoreIds.includes(ord.firestoreId)));
-        if (sameRzp || sameId || sameDoc) {
+        const crossDocRzp = (ord.firestoreId && existing.razorpayOrderId && ord.firestoreId === existing.razorpayOrderId) ||
+                            (ord.razorpayOrderId && existing.firestoreId && ord.razorpayOrderId === existing.firestoreId);
+        const samePayment = ord.razorpayPaymentId && existing.razorpayPaymentId && ord.razorpayPaymentId === existing.razorpayPaymentId;
+        const sameCustOrder = ord.number && existing.number && ord.number === existing.number &&
+                              ord.date && existing.date && ord.date === existing.date &&
+                              ord.totalCost && existing.totalCost && ord.totalCost === existing.totalCost;
+
+        if (sameRzp || sameId || sameDoc || crossDocRzp || samePayment || sameCustOrder) {
           matchKey = k;
           break;
         }
@@ -266,7 +351,7 @@ function startOrdersListener() {
         }
 
         // CRITICAL FIX: If ANY copy was printed, the order IS PRINTED! Never revert to unprinted!
-        if (ord.isPrinted === true || existing.isPrinted === true) {
+        if (ord.isPrinted === true || existing.isPrinted === true || isCachedPrinted) {
           existing.isPrinted = true;
         }
 
@@ -299,6 +384,8 @@ function startOrdersListener() {
       }
     }
     _allOrders = Array.from(orderMap.values());
+    // ⬇️ Chronological sort: Newest orders first at the top, older orders below
+    _allOrders.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
     renderOrders();
     updateStockCounters();
     updateCustomerAnalytics();
@@ -433,6 +520,8 @@ function renderOrders() {
     : _allOrders.filter(o => !o.isPrinted && isPaidOrder(o));
 
   const newOrders = filterList(baseNewList, 'orderSearch', 'filterFrom', 'filterTo');
+  // ⬇️ Ensure newest orders are ALWAYS at the top of the table
+  newOrders.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
   window._filteredNewOrders = newOrders.filter(o => !o.isPrinted && isPaidOrder(o)); // Store only unprinted paid orders for PDF
 
   // Dynamic section title for visual feedback
@@ -459,6 +548,7 @@ function renderOrders() {
   }
 
   const tiPendingOrders = _allOrders.filter(o => o.isPrinted && !o.trackingId && o.status !== 'Cancelled');
+  tiPendingOrders.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
   
   const printedSearchQuery = (document.getElementById('printedSearch')?.value || '').trim();
   const basePrintedList = printedSearchQuery
@@ -466,6 +556,7 @@ function renderOrders() {
     : _allOrders.filter(o => o.isPrinted && (o.trackingId || o.status === 'Cancelled'));
 
   const printedOrders = filterList(basePrintedList, 'printedSearch', 'printedFilterFrom', 'printedFilterTo');
+  printedOrders.sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
 
   const printedTitleEl = document.getElementById('printedSectionTitle');
   if (printedTitleEl) {
@@ -830,8 +921,15 @@ window.printNewOrders = async function() {
   showToast('Moving orders to Printed section...');
   try {
     const updatePromises = [];
+    const printedIdsToCache = [];
     for (const ord of newOrders) {
       ord.isPrinted = true; // Instantly mark locally so it leaves New Orders immediately
+      if (ord.firestoreId) printedIdsToCache.push(ord.firestoreId);
+      if (ord.id) printedIdsToCache.push(ord.id);
+      if (ord.razorpayOrderId) printedIdsToCache.push(ord.razorpayOrderId);
+      if (ord.razorpayPaymentId) printedIdsToCache.push(ord.razorpayPaymentId);
+      if (Array.isArray(ord.allFirestoreIds)) printedIdsToCache.push(...ord.allFirestoreIds);
+
       const docIds = new Set(ord.allFirestoreIds || [ord.firestoreId]);
       docIds.forEach(id => {
         updatePromises.push(
@@ -857,6 +955,9 @@ window.printNewOrders = async function() {
       }
     }
 
+    // 🔒 Lock printed order IDs into persistent localStorage cache
+    markOrdersPrintedInCache(printedIdsToCache);
+
     renderOrders(); // Instant re-render so table updates immediately!
     await Promise.all(updatePromises);
     showToast('✅ PDF downloaded & orders moved to Tracking Pending!');
@@ -872,11 +973,18 @@ window.moveCancelledOrders = async function() {
   showToast('Moving cancelled orders...');
   try {
     const updatePromises = [];
+    const idsToCache = [];
     cancelledOrders.forEach(ord => {
       ord.isPrinted = true;
+      if (ord.firestoreId) idsToCache.push(ord.firestoreId);
+      if (ord.id) idsToCache.push(ord.id);
+      if (ord.razorpayOrderId) idsToCache.push(ord.razorpayOrderId);
+      if (Array.isArray(ord.allFirestoreIds)) idsToCache.push(...ord.allFirestoreIds);
+
       const ids = ord.allFirestoreIds || [ord.firestoreId];
       ids.forEach(id => updatePromises.push(db.collection('orders').doc(id).set({ isPrinted: true }, { merge: true })));
     });
+    markOrdersPrintedInCache(idsToCache);
     renderOrders();
     await Promise.all(updatePromises);
     showToast('Cancelled orders moved successfully!');

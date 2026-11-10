@@ -10,3 +10,4 @@ module.exports = async function handler(req, res) {
   const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_live_Sjx650p4JEj9fo';
   return res.status(200).json({ keyId });
 };
+

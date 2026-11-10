@@ -126,6 +126,13 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
   // If the document already exists (frontend saved first), only update status-related fields
   // DO NOT overwrite id, firstName, number, items, etc. that the frontend set correctly
   if (existingDoc) {
+    const isAlreadyPaid = existingDoc.fields?.status?.stringValue === 'Paid' || existingDoc.fields?.status?.stringValue === 'paid';
+    const isAlreadyPrinted = existingDoc.fields?.isPrinted?.booleanValue === true;
+    if (isAlreadyPaid || isAlreadyPrinted) {
+      console.log(`Document ${orderId} already exists and is Paid/Printed. Preserving untouched.`);
+      return existingDoc;
+    }
+
     console.log(`Document ${orderId} already exists. Updating only status fields, preserving frontend data.`);
     const updateFields = ['status', 'paidAt', 'paymentMethod', 'razorpayPaymentId', 'razorpayOrderId'];
     const updateMask = updateFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
@@ -153,7 +160,9 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
 
   // Document truly doesn't exist — create it with webhook data as fallback
   // Use the Razorpay Order ID as the display Order ID too (so it's consistent)
-  const createUrl = `${FIRESTORE_BASE_URL}/orders/${orderId}`;
+  const updateFields = Object.keys(postBody.fields);
+  const updateMask = updateFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
+  const createUrl = `${FIRESTORE_BASE_URL}/orders/${orderId}?${updateMask}`;
   const postBody = {
     fields: {
       id: { stringValue: 'ORD-' + orderId.replace(/[^0-9]/g, '').slice(-13) },
@@ -292,8 +301,8 @@ module.exports = async function handler(req, res) {
 
       if (!orderDoc) {
         // Wait briefly — the frontend may be saving right now after payment verification
-        console.log(`Order ${orderId} not found yet. Waiting 2s for frontend save...`);
-        await new Promise(r => setTimeout(r, 2000));
+        console.log(`Order ${orderId} not found yet. Waiting 4s for frontend save...`);
+        await new Promise(r => setTimeout(r, 4000));
 
         // Re-check after waiting
         const orderDocRetry = await findOrderDoc(orderId);
@@ -304,11 +313,12 @@ module.exports = async function handler(req, res) {
           return res.status(200).json({ status: 'created_as_paid', orderId, paymentId, docName: createdDoc.name });
         }
 
-        // Frontend saved it in the meantime — just ensure it's marked Paid
+        // Frontend saved it in the meantime — check if already marked Paid or Printed
         const retryStatus = orderDocRetry.fields?.status?.stringValue;
-        if (retryStatus === 'Paid' || retryStatus === 'paid') {
-          console.log(`Order ${orderId} already Paid (frontend saved it). Nothing to do.`);
-          return res.status(200).json({ status: 'already_paid', orderId });
+        const isPrintedRetry = orderDocRetry.fields?.isPrinted?.booleanValue === true;
+        if (retryStatus === 'Paid' || retryStatus === 'paid' || isPrintedRetry) {
+          console.log(`Order ${orderId} already Paid/Printed (frontend saved it). Nothing to do.`);
+          return res.status(200).json({ status: 'already_paid_or_printed', orderId });
         }
         await markOrderAsPaid(orderDocRetry.name, paymentId);
         console.log(`🎉 SUCCESS: Order ${orderId} updated to 'Paid' after frontend save!`);
@@ -316,11 +326,12 @@ module.exports = async function handler(req, res) {
       }
 
       const currentStatus = orderDoc.fields?.status?.stringValue;
-      console.log(`Current status in Firestore for ${orderId}: '${currentStatus}'`);
+      const isPrintedDoc = orderDoc.fields?.isPrinted?.booleanValue === true;
+      console.log(`Current status in Firestore for ${orderId}: '${currentStatus}', isPrinted: ${isPrintedDoc}`);
 
-      if (currentStatus === 'Paid' || currentStatus === 'paid') {
-        console.log(`Order ${orderId} is already marked as Paid. Nothing to do.`);
-        return res.status(200).json({ status: 'already_paid', orderId });
+      if (currentStatus === 'Paid' || currentStatus === 'paid' || isPrintedDoc) {
+        console.log(`Order ${orderId} is already marked as Paid or Printed. Nothing to do.`);
+        return res.status(200).json({ status: 'already_paid_or_printed', orderId });
       }
 
       // Update to 'Paid' — but do NOT overwrite id or other fields the frontend set
@@ -337,3 +348,4 @@ module.exports = async function handler(req, res) {
   // Other events (e.g. payment.failed, etc.)
   return res.status(200).json({ status: 'ignored', event: eventName });
 };
+
