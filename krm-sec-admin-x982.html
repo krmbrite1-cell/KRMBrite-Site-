@@ -503,6 +503,14 @@ tr:hover td{background:rgba(99,102,241,.04);}
   background: linear-gradient(135deg, #d97706, #f59e0b);
   box-shadow: 0 4px 10px rgba(245,158,11,0.3);
 }
+.cust-avatar.sample {
+  background: linear-gradient(135deg, #e11d48, #f43f5e);
+  box-shadow: 0 4px 10px rgba(244,63,94,0.3);
+}
+.cust-avatar.converted {
+  background: linear-gradient(135deg, #059669, #0891b2);
+  box-shadow: 0 4px 10px rgba(6,182,212,0.3);
+}
 .cust-badge-tag {
   display: inline-flex;
   align-items: center;
@@ -527,6 +535,16 @@ tr:hover td{background:rgba(99,102,241,.04);}
   background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.15));
   color: #fcd34d;
   border: 1px solid rgba(245,158,11,0.4);
+}
+.tag-sample {
+  background: rgba(244,63,94,0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244,63,94,0.35);
+}
+.tag-converted {
+  background: rgba(6,182,212,0.15);
+  color: #22d3ee;
+  border: 1px solid rgba(6,182,212,0.35);
 }
 .btn-cust-action {
   padding: 6px 12px;
@@ -704,73 +722,112 @@ tr:hover td{background:rgba(99,102,241,.04);}
             </div>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-export" onclick="exportCustomersExcel('repeat')" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.84rem; padding: 9px 16px; box-shadow: 0 4px 14px rgba(16,185,129,0.35);">
-              📥 Export Repeat Buyers (.xlsx)
+            <button class="btn-export" onclick="exportCustomersExcel('sample_buyers')" style="background: linear-gradient(135deg, #e11d48, #f43f5e); font-size: 0.84rem; padding: 9px 16px; box-shadow: 0 4px 14px rgba(244,63,94,0.35);">
+              📦 Export Sample Buyers (.xlsx)
+            </button>
+            <button class="btn-export" onclick="exportCustomersExcel('sample_converted')" style="background: linear-gradient(135deg, #059669, #0891b2); font-size: 0.84rem; padding: 9px 16px; box-shadow: 0 4px 14px rgba(6,182,212,0.35);">
+              🎯 Export Converted (.xlsx)
+            </button>
+            <button class="btn-export" onclick="exportCustomersExcel('repeat')" style="background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.35); font-size: 0.84rem; padding: 9px 16px;">
+              🔁 Export Repeat (.xlsx)
             </button>
             <button class="btn-export" onclick="exportCustomersExcel('one_time')" style="background: rgba(99,102,241,0.18); color: #a78bfa; border: 1px solid rgba(99,102,241,0.35); font-size: 0.84rem; padding: 9px 16px;">
-              📥 Export 1-Time Buyers (.xlsx)
+              👤 Export 1-Time (.xlsx)
             </button>
             <button class="btn-export" onclick="exportCustomersExcel('all')" style="background: rgba(100,116,139,0.15); color: #cbd5e1; border: 1px solid rgba(100,116,139,0.3); font-size: 0.84rem; padding: 9px 16px;">
               📊 Export All (.xlsx)
             </button>
+            <button class="btn-export" onclick="copyCurrentCustomerPhones()" style="background: rgba(37,211,102,0.18); color: #4ade80; border: 1px solid rgba(37,211,102,0.35); font-size: 0.84rem; padding: 9px 16px; display:inline-flex; align-items:center; gap:6px;">
+              📋 Copy Phone Numbers
+            </button>
           </div>
         </div>
 
-        <!-- 4-Card Analytics Overview Grid -->
-        <div class="cust-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; margin-bottom: 24px;">
+        <!-- 6-Card Analytics Overview Grid -->
+        <div class="cust-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
           <!-- Card 1: Total Unique Customers -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:20px; position:relative; overflow:hidden;">
+          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; position:relative; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px;">Total Unique Customers</div>
-                <div id="statCustTotalCount" style="font-size: 2rem; font-weight: 800; color: #fff; margin-top: 6px;">0</div>
+                <div id="statCustTotalCount" style="font-size: 1.85rem; font-weight: 800; color: #fff; margin-top: 6px;">0</div>
               </div>
-              <div style="width:44px; height:44px; border-radius:12px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">👥</div>
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">👥</div>
             </div>
-            <div style="font-size:0.8rem; color:var(--muted); margin-top:8px;">Total verified customer profiles across all orders</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Total verified customer profiles</div>
           </div>
 
           <!-- Card 2: One-Time Buyers -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:20px; border-left:4px solid #60a5fa; position:relative; overflow:hidden;">
+          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #60a5fa; position:relative; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
-                <div class="tb-label" style="letter-spacing:0.8px; color:#93c5fd;">One-Time Buyers (1 Order)</div>
-                <div id="statCustOneTimeCount" style="font-size: 2rem; font-weight: 800; color: #60a5fa; margin-top: 6px;">0</div>
+                <div class="tb-label" style="letter-spacing:0.8px; color:#93c5fd;">One-Time Buyers</div>
+                <div id="statCustOneTimeCount" style="font-size: 1.85rem; font-weight: 800; color: #60a5fa; margin-top: 6px;">0</div>
               </div>
-              <div style="width:44px; height:44px; border-radius:12px; background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">👤</div>
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">👤</div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.82rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.8rem;">
               <span id="statCustOneTimePct" style="color:var(--muted); font-weight:600;">0% of buyers</span>
               <span id="statCustOneTimeRev" style="color:#60a5fa; font-weight:700;">₹0</span>
             </div>
           </div>
 
           <!-- Card 3: Repeat Buyers -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:20px; border-left:4px solid #10b981; position:relative; overflow:hidden;">
+          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #10b981; position:relative; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
-                <div class="tb-label" style="letter-spacing:0.8px; color:#6ee7b7;">Repeat Buyers (2+ Orders)</div>
-                <div id="statCustRepeatCount" style="font-size: 2rem; font-weight: 800; color: #34d399; margin-top: 6px;">0</div>
+                <div class="tb-label" style="letter-spacing:0.8px; color:#6ee7b7;">Repeat Buyers (2+)</div>
+                <div id="statCustRepeatCount" style="font-size: 1.85rem; font-weight: 800; color: #34d399; margin-top: 6px;">0</div>
               </div>
-              <div style="width:44px; height:44px; border-radius:12px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔁</div>
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🔁</div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.82rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.8rem;">
               <span id="statCustRepeatRate" style="color:#34d399; font-weight:700; background:rgba(16,185,129,0.15); padding:2px 8px; border-radius:10px;">0% Repeat Rate</span>
               <span id="statCustRepeatRev" style="color:#34d399; font-weight:700;">₹0</span>
             </div>
           </div>
 
-          <!-- Card 4: Repeat Value & Retention -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:20px; border-left:4px solid #f59e0b; position:relative; overflow:hidden;">
+          <!-- Card 4: Sample Pack Buyers (NEW) -->
+          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #f43f5e; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div class="tb-label" style="letter-spacing:0.8px; color:#fda4af;">Sample Pack Buyers</div>
+                <div id="statCustSampleCount" style="font-size: 1.85rem; font-weight: 800; color: #fb7185; margin-top: 6px;">0</div>
+              </div>
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">📦</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.8rem;">
+              <span id="statCustSamplePct" style="color:var(--muted); font-weight:600;">0% of buyers</span>
+              <span id="statCustSampleRev" style="color:#fb7185; font-weight:700;">₹0 spend</span>
+            </div>
+          </div>
+
+          <!-- Card 5: Converted to Regular (NEW) -->
+          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #06b6d4; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div class="tb-label" style="letter-spacing:0.8px; color:#67e8f9;">Sample ➔ Converted</div>
+                <div id="statCustConvertedCount" style="font-size: 1.85rem; font-weight: 800; color: #22d3ee; margin-top: 6px;">0</div>
+              </div>
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🎯</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.8rem;">
+              <span id="statCustConvertedRate" style="color:#22d3ee; font-weight:700; background:rgba(6,182,212,0.15); padding:2px 8px; border-radius:10px;">0% Conversion</span>
+              <span id="statCustConvertedRev" style="color:#22d3ee; font-weight:700;">₹0</span>
+            </div>
+          </div>
+
+          <!-- Card 6: Repeat Value & Retention -->
+          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #f59e0b; position:relative; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px; color:#fcd34d;">Avg Repeat Buyer Spend</div>
-                <div id="statCustRepeatAOV" style="font-size: 2rem; font-weight: 800; color: #f59e0b; margin-top: 6px;">₹0</div>
+                <div id="statCustRepeatAOV" style="font-size: 1.85rem; font-weight: 800; color: #f59e0b; margin-top: 6px;">₹0</div>
               </div>
-              <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">💎</div>
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">💎</div>
             </div>
-            <div style="font-size:0.8rem; color:var(--muted); margin-top:8px;">
-              Top repeat buyer: <strong id="statCustTopBuyer" style="color:#fff;">—</strong>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              Top buyer: <strong id="statCustTopBuyer" style="color:#fff;">—</strong>
             </div>
           </div>
         </div>
@@ -781,20 +838,28 @@ tr:hover td{background:rgba(99,102,241,.04);}
             <!-- Segment Pill Buttons -->
             <div class="cust-tabs-group" style="display:flex; gap:10px; flex-wrap:wrap;">
               <button class="cust-tab-pill active" id="custTab-repeat" onclick="setCustomerSegment('repeat', this)">
-                <span>🔁 Repeat Buyers (2+ Orders)</span>
+                <span>🔁 Repeat Buyers (2+)</span>
                 <span class="cust-tab-count" id="badgeTabRepeat">0</span>
               </button>
               <button class="cust-tab-pill" id="custTab-onetime" onclick="setCustomerSegment('one_time', this)">
-                <span>👤 One-Time Buyers (1 Order)</span>
+                <span>👤 One-Time Buyers (1)</span>
                 <span class="cust-tab-count" id="badgeTabOneTime">0</span>
+              </button>
+              <button class="cust-tab-pill" id="custTab-sample" onclick="setCustomerSegment('sample_buyers', this)">
+                <span>📦 Sample Pack Buyers</span>
+                <span class="cust-tab-count" id="badgeTabSample">0</span>
+              </button>
+              <button class="cust-tab-pill" id="custTab-sample-converted" onclick="setCustomerSegment('sample_converted', this)">
+                <span>🎯 Sample ➔ Regular (Converted)</span>
+                <span class="cust-tab-count" id="badgeTabSampleConverted">0</span>
+              </button>
+              <button class="cust-tab-pill" id="custTab-vip" onclick="setCustomerSegment('vip', this)">
+                <span>👑 VIP Loyal (3+)</span>
+                <span class="cust-tab-count" id="badgeTabVIP">0</span>
               </button>
               <button class="cust-tab-pill" id="custTab-all" onclick="setCustomerSegment('all', this)">
                 <span>🌐 All Customers</span>
                 <span class="cust-tab-count" id="badgeTabAll">0</span>
-              </button>
-              <button class="cust-tab-pill" id="custTab-vip" onclick="setCustomerSegment('vip', this)">
-                <span>👑 VIP Loyal (3+ Orders)</span>
-                <span class="cust-tab-count" id="badgeTabVIP">0</span>
               </button>
             </div>
 

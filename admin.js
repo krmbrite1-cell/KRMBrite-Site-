@@ -2307,11 +2307,12 @@ window.toggleCouponStatus = async function(id, currentStatus) {
 };
 
 // ============================================================
-// CUSTOMER SEGMENTATION & ANALYTICS MODULE (1-TIME vs REPEAT BUYERS)
+// CUSTOMER SEGMENTATION & ANALYTICS MODULE (1-TIME vs REPEAT vs SAMPLE BUYERS)
 // ============================================================
 
 let _customersList = [];
 let _activeCustomerSegment = 'repeat';
+let _currentlyRenderedCustomers = [];
 
 // Helper: Normalize Indian phone number (extract last 10 digits)
 function normalizeCustomerPhone(phone) {
@@ -2321,6 +2322,20 @@ function normalizeCustomerPhone(phone) {
     return clean.slice(-10);
   }
   return clean;
+}
+
+// Helper: Identify Sample / Trial product items reliably
+function isSampleProductItem(item) {
+  if (!item) return false;
+  const id = String(item.id || item.productId || '').toLowerCase().trim();
+  const title = String(item.title || item.name || '').toLowerCase().trim();
+  return id === 'sample-product' || 
+         id.includes('sample') || 
+         id.includes('trail') || 
+         id.includes('trial') || 
+         title.includes('sample') || 
+         title.includes('trail') || 
+         title.includes('trial');
 }
 
 // Helper: Parse order total cost currency string to number
@@ -2458,15 +2473,94 @@ function processCustomersData() {
       cust.lastOrderAgo = 'Recent';
     }
 
-    // Collect distinct item titles purchased
+    // Collect distinct item titles purchased & calculate Sample vs Regular split
     const itemMap = new Map();
+    let hasSample = false;
+    let hasRegular = false;
+    let sampleOrdersCount = 0;
+    let regularOrdersCount = 0;
+    let sampleSpend = 0;
+    let regularSpend = 0;
+    let firstSampleTimeMs = Infinity;
+    let firstRegularTimeMs = Infinity;
+    let firstSampleDate = '';
+    let firstRegularDate = '';
+
     cust.orders.forEach(ord => {
-      (ord.items || []).forEach(it => {
-        const title = it.title || 'Product';
-        itemMap.set(title, (itemMap.get(title) || 0) + (it.quantity || 1));
-      });
+      let orderHasSample = false;
+      let orderHasRegular = false;
+      const oTime = (ord.createdAt?.toDate?.()?.getTime()) || Number(ord.timestampMs) || (ord.date ? new Date(ord.date).getTime() : 0);
+      const oDateStr = ord.date || (oTime ? new Date(oTime).toLocaleDateString('en-IN') : '');
+
+      if (Array.isArray(ord.items) && ord.items.length > 0) {
+        ord.items.forEach(it => {
+          const title = it.title || 'Product';
+          itemMap.set(title, (itemMap.get(title) || 0) + (it.quantity || 1));
+
+          const itemTotal = (Number(it.price) || 0) * (Number(it.quantity) || 1);
+          if (isSampleProductItem(it)) {
+            orderHasSample = true;
+            sampleSpend += itemTotal;
+          } else {
+            orderHasRegular = true;
+            regularSpend += itemTotal;
+          }
+        });
+      } else {
+        // Fallback for orders without item breakdown: treat as regular
+        orderHasRegular = true;
+      }
+
+      if (orderHasSample) {
+        hasSample = true;
+        sampleOrdersCount++;
+        if (oTime > 0 && oTime < firstSampleTimeMs) {
+          firstSampleTimeMs = oTime;
+          firstSampleDate = oDateStr;
+        }
+      }
+      if (orderHasRegular) {
+        hasRegular = true;
+        regularOrdersCount++;
+        if (oTime > 0 && oTime < firstRegularTimeMs) {
+          firstRegularTimeMs = oTime;
+          firstRegularDate = oDateStr;
+        }
+      }
     });
+
     cust.productSummary = Array.from(itemMap.entries()).map(([t, q]) => `${t} (×${q})`).join(', ');
+
+    // Sample & Conversion attributes
+    cust.boughtSample = hasSample;
+    cust.boughtRegular = hasRegular;
+    cust.sampleOrdersCount = sampleOrdersCount;
+    cust.regularOrdersCount = regularOrdersCount;
+    cust.sampleSpend = sampleSpend;
+    cust.regularSpend = regularSpend;
+    cust.firstSampleDate = firstSampleDate || '—';
+    cust.firstRegularDate = firstRegularDate || '—';
+
+    // Converted: bought Sample AND also ordered Regular product(s)
+    cust.isConvertedFromSample = hasSample && hasRegular;
+
+    if (cust.isConvertedFromSample) {
+      if (firstRegularTimeMs >= firstSampleTimeMs && firstSampleTimeMs < Infinity) {
+        const diffDays = Math.floor((firstRegularTimeMs - firstSampleTimeMs) / (1000 * 60 * 60 * 24));
+        cust.conversionGap = diffDays === 0 ? 'Converted Same Day' : `Converted in ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+      } else {
+        cust.conversionGap = 'Multi-product Buyer';
+      }
+      cust.sampleBadge = '<span class="cust-badge-tag tag-converted">🎯 Converted (Sample ➔ Regular)</span>';
+      if (cust.orderCount < 3) cust.avatarClass = 'converted';
+    } else if (hasSample) {
+      cust.sampleBadge = '<span class="cust-badge-tag tag-sample">📦 Sample Only Buyer</span>';
+      cust.conversionGap = 'Trial Pack Only';
+      if (cust.orderCount < 3) cust.avatarClass = 'sample';
+    } else {
+      cust.sampleBadge = '';
+      cust.conversionGap = 'Regular Products';
+    }
   });
 
   _customersList = list;
@@ -2480,12 +2574,18 @@ function updateCustomerAnalytics() {
   const oneTimeList = customers.filter(c => c.orderCount === 1);
   const repeatList = customers.filter(c => c.orderCount > 1);
   const vipList = customers.filter(c => c.orderCount >= 3);
+  const sampleBuyersList = customers.filter(c => c.boughtSample);
+  const convertedList = customers.filter(c => c.isConvertedFromSample);
 
   const oneTimeRev = oneTimeList.reduce((acc, c) => acc + c.totalSpent, 0);
   const repeatRev = repeatList.reduce((acc, c) => acc + c.totalSpent, 0);
+  const sampleRev = sampleBuyersList.reduce((acc, c) => acc + (c.sampleSpend || 0), 0);
+  const convertedRev = convertedList.reduce((acc, c) => acc + c.totalSpent, 0);
 
   const repeatRate = total > 0 ? ((repeatList.length / total) * 100).toFixed(1) : 0;
   const oneTimePct = total > 0 ? ((oneTimeList.length / total) * 100).toFixed(1) : 0;
+  const samplePct = total > 0 ? ((sampleBuyersList.length / total) * 100).toFixed(1) : 0;
+  const conversionRate = sampleBuyersList.length > 0 ? ((convertedList.length / sampleBuyersList.length) * 100).toFixed(1) : 0;
   const repeatAOV = repeatList.length > 0 ? Math.round(repeatRev / repeatList.length) : 0;
 
   // Find Top Customer
@@ -2507,9 +2607,16 @@ function updateCustomerAnalytics() {
   const elRepeatAOV = document.getElementById('statCustRepeatAOV');
   const elTopBuyer = document.getElementById('statCustTopBuyer');
 
+  const elSample = document.getElementById('statCustSampleCount');
+  const elSamplePct = document.getElementById('statCustSamplePct');
+  const elSampleRev = document.getElementById('statCustSampleRev');
+  const elConverted = document.getElementById('statCustConvertedCount');
+  const elConvertedRate = document.getElementById('statCustConvertedRate');
+  const elConvertedRev = document.getElementById('statCustConvertedRev');
+
   if (elTotal) elTotal.textContent = total.toLocaleString('en-IN');
   if (elOneTime) elOneTime.textContent = oneTimeList.length.toLocaleString('en-IN');
-  if (elOneTimePct) elOneTimePct.textContent = `${oneTimePct}% of customer base`;
+  if (elOneTimePct) elOneTimePct.textContent = `${oneTimePct}% of buyers`;
   if (elOneTimeRev) elOneTimeRev.textContent = `₹${Math.round(oneTimeRev).toLocaleString('en-IN')}`;
   if (elRepeat) elRepeat.textContent = repeatList.length.toLocaleString('en-IN');
   if (elRepeatRate) elRepeatRate.textContent = `${repeatRate}% Repeat Rate`;
@@ -2517,13 +2624,26 @@ function updateCustomerAnalytics() {
   if (elRepeatAOV) elRepeatAOV.textContent = `₹${repeatAOV.toLocaleString('en-IN')}`;
   if (elTopBuyer) elTopBuyer.textContent = topBuyerName;
 
+  if (elSample) elSample.textContent = sampleBuyersList.length.toLocaleString('en-IN');
+  if (elSamplePct) elSamplePct.textContent = `${samplePct}% of buyers`;
+  if (elSampleRev) elSampleRev.textContent = `₹${Math.round(sampleRev).toLocaleString('en-IN')} spend`;
+
+  if (elConverted) elConverted.textContent = convertedList.length.toLocaleString('en-IN');
+  if (elConvertedRate) elConvertedRate.textContent = `${conversionRate}% Conversion`;
+  if (elConvertedRev) elConvertedRev.textContent = `₹${Math.round(convertedRev).toLocaleString('en-IN')}`;
+
   // Badges on pills
   const bRepeat = document.getElementById('badgeTabRepeat');
   const bOneTime = document.getElementById('badgeTabOneTime');
+  const bSample = document.getElementById('badgeTabSample');
+  const bSampleConverted = document.getElementById('badgeTabSampleConverted');
   const bAll = document.getElementById('badgeTabAll');
   const bVIP = document.getElementById('badgeTabVIP');
+
   if (bRepeat) bRepeat.textContent = repeatList.length;
   if (bOneTime) bOneTime.textContent = oneTimeList.length;
+  if (bSample) bSample.textContent = sampleBuyersList.length;
+  if (bSampleConverted) bSampleConverted.textContent = convertedList.length;
   if (bAll) bAll.textContent = total;
   if (bVIP) bVIP.textContent = vipList.length;
 
@@ -2553,6 +2673,12 @@ window.setCustomerSegment = function(segment, btnEl) {
     } else if (segment === 'one_time') {
       titleEl.innerHTML = `<span>👤 One-Time Buyers (1 Order)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(96,165,250,0.2); color:#60a5fa; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
       if (tipEl) tipEl.innerHTML = `💡 These customers ordered once. Reach out via WhatsApp with a refill coupon code to convert them into repeat buyers!`;
+    } else if (segment === 'sample_buyers') {
+      titleEl.innerHTML = `<span>📦 Sample Pack Buyers (Trial Kit)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(244,63,94,0.2); color:#fb7185; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `💡 All customers who ordered the 500ml Trial Pack. Send WhatsApp greetings to ask for their review and offer an upgrade coupon for 5L cans!`;
+    } else if (segment === 'sample_converted') {
+      titleEl.innerHTML = `<span>🎯 Sample ➔ Regular Converted Buyers</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(6,182,212,0.2); color:#22d3ee; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `🎉 CONVERTED BUYERS: These customers tested the Trial Pack first and subsequently purchased full-size regular products! Highest brand loyalty.`;
     } else if (segment === 'vip') {
       titleEl.innerHTML = `<span>👑 VIP Loyal Buyers (3+ Orders)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(245,158,11,0.2); color:#f59e0b; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
       if (tipEl) tipEl.innerHTML = `💎 Super Loyal Customers with 3 or more purchases. Reward them with exclusive benefits and priority shipping!`;
@@ -2579,6 +2705,10 @@ window.filterAndRenderCustomers = function() {
     list = list.filter(c => c.orderCount > 1);
   } else if (_activeCustomerSegment === 'one_time') {
     list = list.filter(c => c.orderCount === 1);
+  } else if (_activeCustomerSegment === 'sample_buyers') {
+    list = list.filter(c => c.boughtSample);
+  } else if (_activeCustomerSegment === 'sample_converted') {
+    list = list.filter(c => c.isConvertedFromSample);
   } else if (_activeCustomerSegment === 'vip') {
     list = list.filter(c => c.orderCount >= 3);
   }
@@ -2618,6 +2748,9 @@ window.filterAndRenderCustomers = function() {
     return 0;
   });
 
+  // Track currently rendered list for 1-click clipboard phone copy
+  _currentlyRenderedCustomers = list;
+
   const countBadge = document.getElementById('custShowingCount');
   if (countBadge) countBadge.textContent = `Showing ${list.length}`;
 
@@ -2655,15 +2788,17 @@ window.filterAndRenderCustomers = function() {
       </td>
       <td>
         <div>${c.tierBadge}</div>
+        ${c.sampleBadge ? `<div style="margin-top:4px;">${c.sampleBadge}</div>` : ''}
         <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">
-          ${c.orderCount === 1 ? 'Single Purchase' : `${c.orderCount} Times Purchased`}
+          ${c.orderCount === 1 ? 'Single Purchase' : `${c.orderCount} Orders Placed`}
         </div>
       </td>
       <td>
         <div style="font-weight:800; font-size:1.05rem; color:var(--green);">₹${Math.round(c.totalSpent).toLocaleString('en-IN')}</div>
         <div style="font-size:0.75rem; color:var(--muted); margin-top:3px;">
-          ${c.orderCount > 1 ? `Avg: ₹${Math.round(c.avgOrderValue)} / order` : '1st Order'}
+          ${c.orderCount > 1 ? `Avg: ₹${Math.round(c.avgOrderValue)} / ord` : '1st Order'}
         </div>
+        ${c.isConvertedFromSample ? `<div style="font-size:0.72rem; color:#22d3ee; margin-top:2px;">Reg: ₹${Math.round(c.regularSpend)} | Spl: ₹${Math.round(c.sampleSpend)}</div>` : ''}
       </td>
       <td>
         <div style="font-size:0.85rem; font-weight:600; color:var(--text);">${locSnippet}</div>
@@ -2674,7 +2809,7 @@ window.filterAndRenderCustomers = function() {
       <td>
         <div style="font-size:0.82rem; font-weight:600; color:#cbd5e1;">Last: ${c.lastOrderDate}</div>
         <div style="font-size:0.75rem; color:#a78bfa; margin-top:2px;">⏳ ${c.lastOrderAgo}</div>
-        ${c.orderCount > 1 ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:1px;">First: ${c.firstOrderDate}</div>` : ''}
+        ${c.isConvertedFromSample ? `<div style="font-size:0.72rem; color:#34d399; margin-top:2px; font-weight:600;">⚡ ${c.conversionGap}</div>` : (c.orderCount > 1 ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:1px;">First: ${c.firstOrderDate}</div>` : '')}
       </td>
       <td>
         <div style="font-size:0.8rem; color:#cbd5e1; max-width:210px; line-height:1.4;" title="${c.productSummary}">
@@ -2687,7 +2822,7 @@ window.filterAndRenderCustomers = function() {
             👁️ Orders (${c.orderCount})
           </button>
           ${cleanPhone ? `
-            <a href="${waUrl}" target="_blank" class="btn-cust-action btn-cust-wa" title="Send WhatsApp Message">
+            <a href="${waUrl}" target="_blank" class="btn-cust-action btn-cust-wa" title="Send WhatsApp Greeting">
               💬 WhatsApp
             </a>
             <a href="${callUrl}" class="btn-cust-action btn-cust-call" title="Call Customer">
@@ -2707,13 +2842,19 @@ window.renderCustomersSection = function() {
   updateCustomerAnalytics();
 };
 
-// WhatsApp Link Generator with professional personalized message
+// WhatsApp Link Generator with segment-personalized messaging
 function generateWhatsAppLink(cust) {
   const cleanPhone = cust.phone.length === 10 ? cust.phone : (cust.rawPhone.replace(/\D/g, '').slice(-10));
   if (!cleanPhone) return '#';
 
   let msg = '';
-  if (cust.orderCount > 1) {
+  if (cust.isConvertedFromSample) {
+    // Sample to Regular Converted Buyer
+    msg = `Vanakkam ${cust.name}! 🌟 Greetings from KRM Brite!\n\nThank you for choosing KRM Brite! We noticed you tried our 500ml Trial Pack and then upgraded to our regular home-care products.\n\nWe are delighted to have you as part of our KRM Brite family! How has your experience been with our cleaning liquids?\n\nAs a converted VIP member, we would love to offer you free delivery & special discount on your upcoming refills. Just let us know right here! ✨`;
+  } else if (cust.boughtSample && !cust.boughtRegular) {
+    // Sample Only Buyer (Retarget for 5L can / combo refill)
+    msg = `Vanakkam ${cust.name}! 🌟 Greetings from KRM Brite!\n\nWe hope you received and tried your KRM Brite 500ml Trial Liquid Detergent + Fabric Conditioner Pack! 🧴✨\n\nHow did you like the fragrance, fabric softness, and cleaning power on your clothes?\n\nWe would love your genuine feedback! Also, we have a SPECIAL UPGRADE OFFER waiting for you with an exclusive discount coupon on our 5-Litre cans.\n\nReply 'YES' to claim your special coupon code! 🎁`;
+  } else if (cust.orderCount > 1) {
     // Repeat Buyer VIP Message
     msg = `Vanakkam ${cust.name}! 🌟 Greetings from KRM Brite!\n\nWe would like to personally thank you for being one of our valued loyal customers with ${cust.orderCount} orders.\n\nYour continuous support means the world to us. As a VIP appreciation gesture, please let us know whenever you need your next refill or if you'd like an exclusive repeat customer discount!\n\nThank you for trusting KRM Brite! ✨`;
   } else {
@@ -2723,6 +2864,40 @@ function generateWhatsAppLink(cust) {
 
   return `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`;
 }
+
+// 1-Click Copy Phone Numbers of currently rendered customers (for WhatsApp Broadcast / SMS)
+window.copyCurrentCustomerPhones = function() {
+  const list = _currentlyRenderedCustomers || [];
+  if (list.length === 0) {
+    alert('No customers in the current list to copy.');
+    return;
+  }
+
+  const phoneSet = new Set();
+  list.forEach(c => {
+    const clean = normalizeCustomerPhone(c.phone || c.rawPhone);
+    if (clean && clean.length === 10) {
+      phoneSet.add(clean);
+    }
+  });
+
+  const phones = Array.from(phoneSet);
+  if (phones.length === 0) {
+    alert('No valid 10-digit phone numbers found in the current list.');
+    return;
+  }
+
+  const phoneText = phones.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(phoneText).then(() => {
+      showToast(`✓ Copied ${phones.length} phone numbers to clipboard! Ready for WhatsApp broadcast.`);
+    }).catch(() => {
+      prompt('Copy phone numbers below (Ctrl+C):', phoneText);
+    });
+  } else {
+    prompt('Copy phone numbers below (Ctrl+C):', phoneText);
+  }
+};
 
 // Open Customer Order History Modal
 window.openCustomerHistory = function(key) {
@@ -2735,14 +2910,24 @@ window.openCustomerHistory = function(key) {
   document.getElementById('modalCustAvatar').textContent = initial;
   document.getElementById('modalCustAvatar').className = `cust-avatar ${cust.avatarClass}`;
   document.getElementById('modalCustName').textContent = cust.name;
-  document.getElementById('modalCustTierBadge').innerHTML = cust.tierBadge;
+  
+  let badgesHtml = cust.tierBadge || '';
+  if (cust.sampleBadge) badgesHtml += ` ${cust.sampleBadge}`;
+  document.getElementById('modalCustTierBadge').innerHTML = badgesHtml;
   
   const cleanPhone = cust.phone.length === 10 ? cust.phone : (cust.rawPhone.replace(/\D/g, '').slice(-10));
-  document.getElementById('modalCustMeta').innerHTML = `
+  let metaHtml = `
     📞 Phone: <strong>${cleanPhone ? `+91 ${cleanPhone}` : '—'}</strong> | 
     ✉️ Email: <strong>${cust.email || '—'}</strong> | 
     📍 Location: <strong>${cust.district || ''} ${cust.state ? `, ${cust.state}` : ''} (${cust.pincode || '—'})</strong>
   `;
+
+  if (cust.isConvertedFromSample) {
+    metaHtml += `<div style="margin-top:6px; font-size:0.78rem; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.3); color:#22d3ee; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">🎯 <strong>Converted:</strong> Tried Sample (${cust.firstSampleDate}) ➔ Upgraded to Regular (${cust.firstRegularDate}) • ${cust.conversionGap}</div>`;
+  } else if (cust.boughtSample) {
+    metaHtml += `<div style="margin-top:6px; font-size:0.78rem; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); color:#fb7185; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">📦 <strong>Sample Pack Customer:</strong> Has not ordered regular products yet. Retarget with refill coupon!</div>`;
+  }
+  document.getElementById('modalCustMeta').innerHTML = metaHtml;
 
   // Stats Grid in modal
   const statsGrid = document.getElementById('modalCustStatsGrid');
@@ -2772,12 +2957,16 @@ window.openCustomerHistory = function(key) {
   ordersListEl.innerHTML = '';
 
   cust.orders.forEach((ord, idx) => {
-    const itemsHtml = (ord.items || []).map(it => `
-      <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:6px 10px; border-radius:6px; font-size:0.82rem; margin-bottom:4px;">
-        <span><strong>${it.title}</strong> × ${it.quantity}</span>
-        <span style="color:var(--accent); font-weight:700;">₹${((it.price || 0) * (it.quantity || 1)).toFixed(0)}</span>
-      </div>
-    `).join('');
+    const itemsHtml = (ord.items || []).map(it => {
+      const isSample = isSampleProductItem(it);
+      const sampleTag = isSample ? '<span style="font-size:0.68rem; background:rgba(244,63,94,0.2); color:#fb7185; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700;">📦 Sample Pack</span>' : '';
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:6px 10px; border-radius:6px; font-size:0.82rem; margin-bottom:4px;">
+          <span><strong>${it.title}</strong> × ${it.quantity} ${sampleTag}</span>
+          <span style="color:var(--accent); font-weight:700;">₹${((it.price || 0) * (it.quantity || 1)).toFixed(0)}</span>
+        </div>
+      `;
+    }).join('');
 
     const statusBadge = (ord.status === 'Paid' || ord.status === 'paid') ? 
       '<span class="badge badge-success">✓ Paid</span>' : 
@@ -2851,20 +3040,37 @@ window.exportCustomersExcel = function(segment) {
 
   processCustomersData();
   let list = _customersList;
-  let filename = 'KRM_Brite_Customers.xlsx';
+  const dateStr = new Date().toISOString().slice(0, 10);
+  let filename = `KRM_Brite_Customers_${dateStr}.xlsx`;
+  let sheetName = 'Customers';
 
   if (segment === 'repeat') {
     list = list.filter(c => c.orderCount > 1);
-    filename = `KRM_Brite_Repeat_Buyers_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    filename = `KRM_Brite_Repeat_Buyers_${dateStr}.xlsx`;
+    sheetName = 'Repeat Buyers';
   } else if (segment === 'one_time') {
     list = list.filter(c => c.orderCount === 1);
-    filename = `KRM_Brite_One_Time_Buyers_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    filename = `KRM_Brite_One_Time_Buyers_${dateStr}.xlsx`;
+    sheetName = '1-Time Buyers';
+  } else if (segment === 'sample_buyers') {
+    list = list.filter(c => c.boughtSample);
+    filename = `KRM_Brite_Sample_Pack_Buyers_${dateStr}.xlsx`;
+    sheetName = 'Sample Buyers';
+  } else if (segment === 'sample_converted') {
+    list = list.filter(c => c.isConvertedFromSample);
+    filename = `KRM_Brite_Sample_Converted_Buyers_${dateStr}.xlsx`;
+    sheetName = 'Converted Buyers';
+  } else if (segment === 'vip') {
+    list = list.filter(c => c.orderCount >= 3);
+    filename = `KRM_Brite_VIP_Buyers_${dateStr}.xlsx`;
+    sheetName = 'VIP Loyal';
   } else {
-    filename = `KRM_Brite_All_Customers_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    filename = `KRM_Brite_All_Customers_${dateStr}.xlsx`;
+    sheetName = 'All Customers';
   }
 
   if (list.length === 0) {
-    alert('No customer records to export.');
+    alert('No customer records to export for the selected filter.');
     return;
   }
 
@@ -2874,9 +3080,16 @@ window.exportCustomersExcel = function(segment) {
     'Mobile Number': c.phone ? `+91 ${c.phone}` : c.rawPhone,
     'Email Address': c.email || '—',
     'Customer Segment': c.orderCount > 1 ? `Repeat Buyer (${c.orderCount} Orders)` : 'One-Time Buyer (1 Order)',
-    'Loyalty Tier': c.tier,
+    'Sample Status': c.isConvertedFromSample ? '🎯 Converted (Sample ➔ Regular)' : (c.boughtSample ? '📦 Sample Only Buyer' : 'Direct Regular Buyer'),
+    'Trial Pack Tried': c.boughtSample ? 'Yes' : 'No',
+    'Converted to Regular': c.isConvertedFromSample ? 'Yes' : 'No',
+    'Conversion Gap': c.conversionGap || '—',
+    'First Sample Order Date': c.firstSampleDate || '—',
+    'First Regular Order Date': c.firstRegularDate || '—',
     'Total Orders Placed': c.orderCount,
-    'Total Spend (₹)': Math.round(c.totalSpent),
+    'Sample Spend (₹)': Math.round(c.sampleSpend || 0),
+    'Regular Spend (₹)': Math.round(c.regularSpend || 0),
+    'Total Lifetime Spend (₹)': Math.round(c.totalSpent),
     'Average Order Value (₹)': Math.round(c.avgOrderValue),
     'First Order Date': c.firstOrderDate,
     'Last Order Date': c.lastOrderDate,
@@ -2890,7 +3103,7 @@ window.exportCustomersExcel = function(segment) {
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
   XLSX.writeFile(workbook, filename);
 
   showToast(`✓ Exported ${list.length} customers to ${filename}!`);
