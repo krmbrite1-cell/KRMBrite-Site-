@@ -437,38 +437,46 @@ tr:hover td{background:rgba(99,102,241,.04);}
 
 /* CUSTOMER SEGMENTATION HUB */
 .cust-kpi-card {
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
 }
 .cust-kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.3);
-  border-color: rgba(99,102,241,0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.4);
+}
+.cust-kpi-card.active-kpi {
+  box-shadow: 0 0 0 2px #818cf8, 0 12px 28px rgba(99,102,241,0.3) !important;
+  border-color: #818cf8 !important;
 }
 .cust-tab-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 9px 18px;
   border-radius: 50px;
   border: 1px solid var(--border);
-  background: #0f172a;
+  background: rgba(15, 23, 42, 0.85);
   color: var(--muted);
   font-family: inherit;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  white-space: nowrap;
 }
 .cust-tab-pill:hover {
-  color: var(--text);
+  color: #fff;
   border-color: rgba(99,102,241,0.5);
-  background: rgba(99,102,241,0.08);
+  background: rgba(99,102,241,0.12);
+  transform: translateY(-1px);
 }
 .cust-tab-pill.active {
-  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.2));
-  color: #c4b5fd;
-  border-color: var(--accent);
-  box-shadow: 0 0 15px rgba(99,102,241,0.25);
+  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25));
+  color: #fff;
+  border-color: #818cf8;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.25);
 }
 .cust-tab-count {
   padding: 2px 8px;
@@ -478,7 +486,57 @@ tr:hover td{background:rgba(99,102,241,.04);}
   font-weight: 800;
 }
 .cust-tab-pill.active .cust-tab-count {
-  background: rgba(139,92,246,0.35);
+  background: rgba(129, 140, 248, 0.35);
+  color: #fff;
+}
+.cust-tab-pill#custTab-repeat.active {
+  background: linear-gradient(135deg, rgba(16,185,129,0.22), rgba(5,150,105,0.25));
+  border-color: #34d399;
+  color: #a7f3d0;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.25);
+}
+.cust-tab-pill#custTab-repeat.active .cust-tab-count {
+  background: rgba(16,185,129,0.35);
+  color: #fff;
+}
+.cust-tab-pill#custTab-onetime.active {
+  background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(37,99,235,0.25));
+  border-color: #60a5fa;
+  color: #bfdbfe;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.25);
+}
+.cust-tab-pill#custTab-onetime.active .cust-tab-count {
+  background: rgba(59,130,246,0.35);
+  color: #fff;
+}
+.cust-tab-pill#custTab-sample.active {
+  background: linear-gradient(135deg, rgba(244,63,94,0.22), rgba(225,29,72,0.25));
+  border-color: #fb7185;
+  color: #fecdd3;
+  box-shadow: 0 4px 14px rgba(244,63,94,0.25);
+}
+.cust-tab-pill#custTab-sample.active .cust-tab-count {
+  background: rgba(244,63,94,0.35);
+  color: #fff;
+}
+.cust-tab-pill#custTab-sample-converted.active {
+  background: linear-gradient(135deg, rgba(6,182,212,0.22), rgba(8,145,178,0.25));
+  border-color: #22d3ee;
+  color: #cffafe;
+  box-shadow: 0 4px 14px rgba(6,182,212,0.25);
+}
+.cust-tab-pill#custTab-sample-converted.active .cust-tab-count {
+  background: rgba(6,182,212,0.35);
+  color: #fff;
+}
+.cust-tab-pill#custTab-vip.active {
+  background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.25));
+  border-color: #fbbf24;
+  color: #fde68a;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.25);
+}
+.cust-tab-pill#custTab-vip.active .cust-tab-count {
+  background: rgba(245,158,11,0.35);
   color: #fff;
 }
 .cust-avatar {
@@ -547,22 +605,23 @@ tr:hover td{background:rgba(99,102,241,.04);}
   border: 1px solid rgba(6,182,212,0.35);
 }
 .btn-cust-action {
-  padding: 6px 12px;
+  padding: 7px 12px;
   border-radius: 6px;
   border: none;
   font-weight: 600;
   font-size: 0.78rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   gap: 5px;
   text-decoration: none;
+  user-select: none;
 }
 .btn-cust-wa {
   background: rgba(37,211,102,0.15);
   color: #4ade80;
-  border: 1px solid rgba(37,211,102,0.3);
+  border: 1px solid rgba(37,211,102,0.35);
 }
 .btn-cust-wa:hover {
   background: #25d366;
@@ -577,12 +636,18 @@ tr:hover td{background:rgba(99,102,241,.04);}
 }
 .btn-cust-view:hover {
   background: rgba(99,102,241,0.3);
+  color: #fff;
   transform: translateY(-1px);
 }
 .btn-cust-call {
   background: rgba(100,116,139,0.15);
   color: #94a3b8;
   border: 1px solid rgba(100,116,139,0.3);
+}
+.btn-cust-call:hover {
+  background: rgba(100,116,139,0.3);
+  color: #fff;
+  transform: translateY(-1px);
 }
 .btn-cust-call:hover {
   background: rgba(100,116,139,0.3);
@@ -711,54 +776,45 @@ tr:hover td{background:rgba(99,102,241,.04);}
       <div id="customersView" class="view-section">
         
         <!-- Header Banner & Action Bar -->
-        <div style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 22px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 20px 24px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
           <div>
             <div style="font-size: 1.35rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px;">
               <span>👥</span> Customer Segmentation Hub
               <span style="font-size: 0.75rem; background: rgba(99,102,241,0.25); color: #a78bfa; border: 1px solid rgba(99,102,241,0.4); padding: 3px 10px; border-radius: 20px; font-weight: 700;">Live CRM Intelligence</span>
             </div>
             <div style="font-size: 0.88rem; color: var(--muted); margin-top: 5px;">
-              Smart grouping by phone number. Segment <strong>One-Time Buyers</strong> vs <strong>Repeat / Loyal Buyers</strong>, track Lifetime Spend (LTV), and launch direct retention outreach.
+              Track <strong>Sample Trial Buyers</strong>, <strong>Converted Regular Customers</strong>, and <strong>Repeat Buyers</strong>. Launch 1-click WhatsApp outreach & Excel exports.
             </div>
           </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-export" onclick="exportCustomersExcel('sample_buyers')" style="background: linear-gradient(135deg, #e11d48, #f43f5e); font-size: 0.84rem; padding: 9px 16px; box-shadow: 0 4px 14px rgba(244,63,94,0.35);">
-              📦 Export Sample Buyers (.xlsx)
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-export" onclick="copyCurrentCustomerPhones()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 0.84rem; padding: 9px 16px; border: none; box-shadow: 0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:7px; cursor:pointer;" title="Copy all phone numbers in current list for WhatsApp broadcast">
+              <span>📋</span> Copy Phone Numbers
             </button>
-            <button class="btn-export" onclick="exportCustomersExcel('sample_converted')" style="background: linear-gradient(135deg, #059669, #0891b2); font-size: 0.84rem; padding: 9px 16px; box-shadow: 0 4px 14px rgba(6,182,212,0.35);">
-              🎯 Export Converted (.xlsx)
+            <button class="btn-export" onclick="exportCurrentCustomerSegment()" style="background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; font-size: 0.84rem; padding: 9px 16px; border: none; box-shadow: 0 4px 14px rgba(99,102,241,0.35); display:inline-flex; align-items:center; gap:7px; cursor:pointer;" title="Download active segment as Excel (.xlsx)">
+              <span>📥</span> Export Current View (.xlsx)
             </button>
-            <button class="btn-export" onclick="exportCustomersExcel('repeat')" style="background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.35); font-size: 0.84rem; padding: 9px 16px;">
-              🔁 Export Repeat (.xlsx)
-            </button>
-            <button class="btn-export" onclick="exportCustomersExcel('one_time')" style="background: rgba(99,102,241,0.18); color: #a78bfa; border: 1px solid rgba(99,102,241,0.35); font-size: 0.84rem; padding: 9px 16px;">
-              👤 Export 1-Time (.xlsx)
-            </button>
-            <button class="btn-export" onclick="exportCustomersExcel('all')" style="background: rgba(100,116,139,0.15); color: #cbd5e1; border: 1px solid rgba(100,116,139,0.3); font-size: 0.84rem; padding: 9px 16px;">
-              📊 Export All (.xlsx)
-            </button>
-            <button class="btn-export" onclick="copyCurrentCustomerPhones()" style="background: rgba(37,211,102,0.18); color: #4ade80; border: 1px solid rgba(37,211,102,0.35); font-size: 0.84rem; padding: 9px 16px; display:inline-flex; align-items:center; gap:6px;">
-              📋 Copy Phone Numbers
+            <button class="btn-export" onclick="exportCustomersExcel('all')" style="background: rgba(100,116,139,0.18); color: #cbd5e1; border: 1px solid rgba(100,116,139,0.35); font-size: 0.84rem; padding: 9px 15px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" title="Export all customers in database">
+              <span>📊</span> Export All
             </button>
           </div>
         </div>
 
-        <!-- 6-Card Analytics Overview Grid -->
-        <div class="cust-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <!-- 6-Card Interactive Analytics Overview Grid -->
+        <div class="cust-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px;">
           <!-- Card 1: Total Unique Customers -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; position:relative; overflow:hidden;">
+          <div class="glass-card cust-kpi-card" id="kpiCustTotal" onclick="setCustomerSegment('all', document.getElementById('custTab-all'))" title="Click to view all customers" style="margin-bottom:0; padding:18px; border-left:4px solid #818cf8;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
-                <div class="tb-label" style="letter-spacing:0.8px;">Total Unique Customers</div>
+                <div class="tb-label" style="letter-spacing:0.8px; color:#c7d2fe;">Total Unique Customers</div>
                 <div id="statCustTotalCount" style="font-size: 1.85rem; font-weight: 800; color: #fff; margin-top: 6px;">0</div>
               </div>
               <div style="width:40px; height:40px; border-radius:12px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">👥</div>
             </div>
-            <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">Total verified customer profiles</div>
+            <div style="font-size:0.76rem; color:var(--muted); margin-top:8px;">Total verified customer profiles • Click to view</div>
           </div>
 
           <!-- Card 2: One-Time Buyers -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #60a5fa; position:relative; overflow:hidden;">
+          <div class="glass-card cust-kpi-card" id="kpiCustOneTime" onclick="setCustomerSegment('one_time', document.getElementById('custTab-onetime'))" title="Click to view one-time buyers" style="margin-bottom:0; padding:18px; border-left:4px solid #60a5fa;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px; color:#93c5fd;">One-Time Buyers</div>
@@ -773,7 +829,7 @@ tr:hover td{background:rgba(99,102,241,.04);}
           </div>
 
           <!-- Card 3: Repeat Buyers -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #10b981; position:relative; overflow:hidden;">
+          <div class="glass-card cust-kpi-card active-kpi" id="kpiCustRepeat" onclick="setCustomerSegment('repeat', document.getElementById('custTab-repeat'))" title="Click to view repeat buyers" style="margin-bottom:0; padding:18px; border-left:4px solid #10b981;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px; color:#6ee7b7;">Repeat Buyers (2+)</div>
@@ -787,8 +843,8 @@ tr:hover td{background:rgba(99,102,241,.04);}
             </div>
           </div>
 
-          <!-- Card 4: Sample Pack Buyers (NEW) -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #f43f5e; position:relative; overflow:hidden;">
+          <!-- Card 4: Sample Pack Buyers -->
+          <div class="glass-card cust-kpi-card" id="kpiCustSample" onclick="setCustomerSegment('sample_buyers', document.getElementById('custTab-sample'))" title="Click to view sample pack buyers" style="margin-bottom:0; padding:18px; border-left:4px solid #f43f5e;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px; color:#fda4af;">Sample Pack Buyers</div>
@@ -802,8 +858,8 @@ tr:hover td{background:rgba(99,102,241,.04);}
             </div>
           </div>
 
-          <!-- Card 5: Converted to Regular (NEW) -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #06b6d4; position:relative; overflow:hidden;">
+          <!-- Card 5: Converted to Regular -->
+          <div class="glass-card cust-kpi-card" id="kpiCustConverted" onclick="setCustomerSegment('sample_converted', document.getElementById('custTab-sample-converted'))" title="Click to view converted buyers" style="margin-bottom:0; padding:18px; border-left:4px solid #06b6d4;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px; color:#67e8f9;">Sample ➔ Converted</div>
@@ -817,8 +873,8 @@ tr:hover td{background:rgba(99,102,241,.04);}
             </div>
           </div>
 
-          <!-- Card 6: Repeat Value & Retention -->
-          <div class="glass-card cust-kpi-card" style="margin-bottom:0; padding:18px; border-left:4px solid #f59e0b; position:relative; overflow:hidden;">
+          <!-- Card 6: Repeat Value & VIP -->
+          <div class="glass-card cust-kpi-card" id="kpiCustVIP" onclick="setCustomerSegment('vip', document.getElementById('custTab-vip'))" title="Click to view VIP buyers" style="margin-bottom:0; padding:18px; border-left:4px solid #f59e0b;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div>
                 <div class="tb-label" style="letter-spacing:0.8px; color:#fcd34d;">Avg Repeat Buyer Spend</div>
@@ -832,11 +888,11 @@ tr:hover td{background:rgba(99,102,241,.04);}
           </div>
         </div>
 
-        <!-- Segment Filter Pills & Toolbar -->
-        <div class="glass-card" style="padding: 16px 20px; margin-bottom: 20px;">
+        <!-- Segment Filter Pills & Search Bar -->
+        <div class="glass-card" style="padding: 16px 20px; margin-bottom: 18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-            <!-- Segment Pill Buttons -->
-            <div class="cust-tabs-group" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <!-- Segment Pill Buttons with smooth horizontal scroll -->
+            <div class="cust-tabs-group" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
               <button class="cust-tab-pill active" id="custTab-repeat" onclick="setCustomerSegment('repeat', this)">
                 <span>🔁 Repeat Buyers (2+)</span>
                 <span class="cust-tab-count" id="badgeTabRepeat">0</span>
@@ -863,13 +919,14 @@ tr:hover td{background:rgba(99,102,241,.04);}
               </button>
             </div>
 
-            <!-- Search & Sort Controls -->
+            <!-- Search & Sort Controls with Clear button -->
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <div class="tb-group" style="margin:0;">
-                <input class="tb-input" id="custSearchInput" placeholder="🔍 Search Name, Phone, District..." oninput="filterAndRenderCustomers()" style="width:240px; padding:9px 14px;">
+              <div class="tb-group" style="margin:0; position:relative;">
+                <input class="tb-input" id="custSearchInput" placeholder="🔍 Search Name, Phone, District..." oninput="filterAndRenderCustomers()" style="width:250px; padding:9px 34px 9px 14px; border-radius:8px;">
+                <button id="custSearchClearBtn" onclick="clearCustSearch()" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:1.15rem; cursor:pointer; line-height:1; padding:2px;">×</button>
               </div>
               <div class="tb-group" style="margin:0;">
-                <select class="tb-input" id="custSortSelect" onchange="filterAndRenderCustomers()" style="padding:9px 12px; cursor:pointer;">
+                <select class="tb-input" id="custSortSelect" onchange="filterAndRenderCustomers()" style="padding:9px 12px; cursor:pointer; border-radius:8px;">
                   <option value="orders_desc">📦 Most Orders First</option>
                   <option value="spend_desc">💰 Highest Total Spend</option>
                   <option value="recent_desc" selected>📅 Most Recent Order</option>
@@ -881,33 +938,37 @@ tr:hover td{background:rgba(99,102,241,.04);}
           </div>
         </div>
 
-        <!-- Section Title & Current Summary -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-          <div id="custSegmentTitle" style="font-size:1.1rem; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <!-- Section Title & Current Summary Card -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div id="custSegmentTitle" style="font-size: 1.05rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px;">
             <span>🔁 Repeat Buyers</span>
-            <span id="custShowingCount" style="font-size:0.8rem; background:rgba(99,102,241,0.2); color:#a78bfa; padding:3px 10px; border-radius:20px;">Showing 0</span>
+            <span id="custShowingCount" style="font-size:0.78rem; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>
           </div>
-          <div id="custSegmentTip" style="font-size:0.82rem; color:var(--muted);">
-            💡 Click <strong>💬 WhatsApp</strong> to launch targeted follow-ups or <strong>👁️ View Orders</strong> for full purchase history.
+          <div id="custSegmentTip" style="font-size: 0.82rem; color: var(--muted); display:flex; align-items:center; gap:6px;">
+            <span>💡</span> <span>Click <strong>💬 WhatsApp</strong> to launch targeted follow-ups or <strong>👁️ Orders</strong> for purchase history.</span>
           </div>
         </div>
 
         <!-- Customers Table -->
-        <div class="tbl-wrap" style="margin-bottom:30px;">
-          <table>
+        <div class="tbl-wrap" style="margin-bottom:30px; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+          <table style="width:100%; border-collapse:collapse;">
             <thead>
-              <tr>
-                <th>Customer</th>
-                <th>Segment / Status</th>
-                <th>Orders & Spend</th>
-                <th>Location</th>
-                <th>Order Timeline</th>
-                <th>Latest Items</th>
-                <th style="text-align:center;">Outreach & Action</th>
+              <tr style="background:#0f172a; border-bottom:1px solid var(--border);">
+                <th style="padding:14px 16px; text-align:left;">Customer</th>
+                <th style="padding:14px 16px; text-align:left;">Segment / Status</th>
+                <th style="padding:14px 16px; text-align:left;">Orders & Spend</th>
+                <th style="padding:14px 16px; text-align:left;">Location</th>
+                <th style="padding:14px 16px; text-align:left;">Order Timeline</th>
+                <th style="padding:14px 16px; text-align:left;">Purchased Items</th>
+                <th style="padding:14px 16px; text-align:center;">Outreach & Action</th>
               </tr>
             </thead>
             <tbody id="customersTableBody">
               <tr><td colspan="7" class="loading-cell"><div class="spinner"></div> Calculating customer purchase frequency...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
             </tbody>
           </table>
         </div>

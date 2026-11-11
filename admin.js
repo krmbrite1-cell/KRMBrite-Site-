@@ -2662,33 +2662,93 @@ function updateCustomerAnalytics() {
 window.setCustomerSegment = function(segment, btnEl) {
   _activeCustomerSegment = segment;
   document.querySelectorAll('.cust-tab-pill').forEach(btn => btn.classList.remove('active'));
-  if (btnEl) btnEl.classList.add('active');
+  if (btnEl) {
+    btnEl.classList.add('active');
+  } else {
+    // If called programmatically or via KPI card click
+    const pillMap = {
+      'repeat': 'custTab-repeat',
+      'one_time': 'custTab-onetime',
+      'sample_buyers': 'custTab-sample',
+      'sample_converted': 'custTab-sample-converted',
+      'vip': 'custTab-vip',
+      'all': 'custTab-all'
+    };
+    const pill = document.getElementById(pillMap[segment]);
+    if (pill) pill.classList.add('active');
+  }
+
+  // Highlight matching KPI Card
+  document.querySelectorAll('.cust-kpi-card').forEach(card => card.classList.remove('active-kpi'));
+  const cardMap = {
+    'repeat': 'kpiCustRepeat',
+    'one_time': 'kpiCustOneTime',
+    'sample_buyers': 'kpiCustSample',
+    'sample_converted': 'kpiCustConverted',
+    'vip': 'kpiCustVIP',
+    'all': 'kpiCustTotal'
+  };
+  const activeCardId = cardMap[segment];
+  if (activeCardId) {
+    const cardEl = document.getElementById(activeCardId);
+    if (cardEl) cardEl.classList.add('active-kpi');
+  }
 
   const titleEl = document.getElementById('custSegmentTitle');
   const tipEl = document.getElementById('custSegmentTip');
   if (titleEl) {
     if (segment === 'repeat') {
-      titleEl.innerHTML = `<span>🔁 Repeat Buyers (2+ Orders)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
-      if (tipEl) tipEl.innerHTML = `💡 These are your most valuable returning customers. Send VIP discounts & thank-you notes via WhatsApp!`;
+      titleEl.innerHTML = `<span>🔁 Repeat Buyers (2+ Orders)</span> <span id="custShowingCount" style="font-size:0.78rem; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `<span>💡</span> <span>These are your most valuable returning customers. Send VIP discounts & thank-you notes via WhatsApp!</span>`;
     } else if (segment === 'one_time') {
-      titleEl.innerHTML = `<span>👤 One-Time Buyers (1 Order)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(96,165,250,0.2); color:#60a5fa; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
-      if (tipEl) tipEl.innerHTML = `💡 These customers ordered once. Reach out via WhatsApp with a refill coupon code to convert them into repeat buyers!`;
+      titleEl.innerHTML = `<span>👤 One-Time Buyers (1 Order)</span> <span id="custShowingCount" style="font-size:0.78rem; background:rgba(96,165,250,0.2); color:#60a5fa; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `<span>💡</span> <span>These customers ordered once. Reach out via WhatsApp with a refill coupon code to convert them into repeat buyers!</span>`;
     } else if (segment === 'sample_buyers') {
-      titleEl.innerHTML = `<span>📦 Sample Pack Buyers (Trial Kit)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(244,63,94,0.2); color:#fb7185; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
-      if (tipEl) tipEl.innerHTML = `💡 All customers who ordered the 500ml Trial Pack. Send WhatsApp greetings to ask for their review and offer an upgrade coupon for 5L cans!`;
+      titleEl.innerHTML = `<span>📦 Sample Pack Buyers (Trial Kit)</span> <span id="custShowingCount" style="font-size:0.78rem; background:rgba(244,63,94,0.2); color:#fb7185; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `<span>💡</span> <span>All customers who ordered the 500ml Trial Pack. Send WhatsApp greetings to ask for their review and offer an upgrade coupon for 5L cans!</span>`;
     } else if (segment === 'sample_converted') {
-      titleEl.innerHTML = `<span>🎯 Sample ➔ Regular Converted Buyers</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(6,182,212,0.2); color:#22d3ee; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
-      if (tipEl) tipEl.innerHTML = `🎉 CONVERTED BUYERS: These customers tested the Trial Pack first and subsequently purchased full-size regular products! Highest brand loyalty.`;
+      titleEl.innerHTML = `<span>🎯 Sample ➔ Regular Converted Buyers</span> <span id="custShowingCount" style="font-size:0.78rem; background:rgba(6,182,212,0.2); color:#22d3ee; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `<span>🎉</span> <span>CONVERTED BUYERS: These customers tested the Trial Pack first and subsequently purchased full-size regular products! Highest brand loyalty.</span>`;
     } else if (segment === 'vip') {
-      titleEl.innerHTML = `<span>👑 VIP Loyal Buyers (3+ Orders)</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(245,158,11,0.2); color:#f59e0b; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
-      if (tipEl) tipEl.innerHTML = `💎 Super Loyal Customers with 3 or more purchases. Reward them with exclusive benefits and priority shipping!`;
+      titleEl.innerHTML = `<span>👑 VIP Loyal Buyers (3+ Orders)</span> <span id="custShowingCount" style="font-size:0.78rem; background:rgba(245,158,11,0.2); color:#f59e0b; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `<span>💎</span> <span>Super Loyal Customers with 3 or more purchases. Reward them with exclusive benefits and priority shipping!</span>`;
     } else {
-      titleEl.innerHTML = `<span>🌐 All Unique Customers</span> <span id="custShowingCount" style="font-size:0.8rem; background:rgba(99,102,241,0.2); color:#a78bfa; padding:3px 10px; border-radius:20px;">Showing 0</span>`;
-      if (tipEl) tipEl.innerHTML = `💡 View entire customer directory sorted by total spend, orders count, or recency.`;
+      titleEl.innerHTML = `<span>🌐 All Unique Customers</span> <span id="custShowingCount" style="font-size:0.78rem; background:rgba(99,102,241,0.2); color:#a78bfa; padding:3px 10px; border-radius:20px; font-weight:700;">Showing 0</span>`;
+      if (tipEl) tipEl.innerHTML = `<span>💡</span> <span>View entire customer directory sorted by total spend, orders count, or recency.</span>`;
     }
   }
 
   filterAndRenderCustomers();
+};
+
+// Clear Customer Search Input
+window.clearCustSearch = function() {
+  const input = document.getElementById('custSearchInput');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('custSearchClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  filterAndRenderCustomers();
+};
+
+// Export Current Active Customer Segment to Excel
+window.exportCurrentCustomerSegment = function() {
+  exportCustomersExcel(_activeCustomerSegment);
+};
+
+// Copy Single Customer Phone Number to Clipboard
+window.copySinglePhone = function(phone, event) {
+  if (event) event.stopPropagation();
+  if (!phone) return;
+  const clean = normalizeCustomerPhone(phone);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(clean).then(() => {
+      showToast(`✓ Copied +91 ${clean} to clipboard!`);
+    }).catch(() => {
+      prompt('Customer phone number:', clean);
+    });
+  } else {
+    prompt('Customer phone number:', clean);
+  }
 };
 
 // Filter, Sort, and Render Table Rows
@@ -2696,7 +2756,11 @@ window.filterAndRenderCustomers = function() {
   const tbody = document.getElementById('customersTableBody');
   if (!tbody) return;
 
-  const q = (document.getElementById('custSearchInput')?.value || '').toLowerCase().trim();
+  const searchInput = document.getElementById('custSearchInput');
+  const q = (searchInput?.value || '').toLowerCase().trim();
+  const clearBtn = document.getElementById('custSearchClearBtn');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
   const sortMode = document.getElementById('custSortSelect')?.value || 'orders_desc';
 
   // 1. Filter by Segment
@@ -2755,7 +2819,7 @@ window.filterAndRenderCustomers = function() {
   if (countBadge) countBadge.textContent = `Showing ${list.length}`;
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">No customers found matching the selected filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell" style="padding:32px 16px; text-align:center; color:var(--muted); font-size:0.92rem;">🔍 No customers found matching the current search or segment filter.</td></tr>`;
     return;
   }
 
@@ -2773,56 +2837,57 @@ window.filterAndRenderCustomers = function() {
     const locSnippet = [c.district, c.state].filter(Boolean).join(', ') || (c.pincode ? `PIN: ${c.pincode}` : '—');
 
     html += `
-    <tr>
-      <td>
+    <tr style="transition:background 0.2s ease;">
+      <td style="padding:14px 16px;">
         <div style="display:flex; align-items:center; gap:12px;">
           <div class="cust-avatar ${c.avatarClass}">${initial}</div>
           <div>
             <div style="font-weight:700; color:#fff; font-size:0.92rem;">${c.name}</div>
-            <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">
-              ${cleanPhone ? `📞 +91 ${cleanPhone}` : '—'}
+            <div style="font-size:0.8rem; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px;">
+              <span>📞 ${cleanPhone ? `+91 ${cleanPhone}` : '—'}</span>
+              ${cleanPhone ? `<button onclick="copySinglePhone('${cleanPhone}', event)" title="Copy phone number" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#93c5fd; cursor:pointer; font-size:0.72rem; padding:1px 6px; border-radius:4px; transition:0.2s; line-height:1.3;">📋 Copy</button>` : ''}
             </div>
-            ${c.email ? `<div style="font-size:0.75rem; color:#818cf8; margin-top:1px;">✉️ ${c.email}</div>` : ''}
+            ${c.email ? `<div style="font-size:0.75rem; color:#818cf8; margin-top:2px;">✉️ ${c.email}</div>` : ''}
           </div>
         </div>
       </td>
-      <td>
+      <td style="padding:14px 16px;">
         <div>${c.tierBadge}</div>
-        ${c.sampleBadge ? `<div style="margin-top:4px;">${c.sampleBadge}</div>` : ''}
-        <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">
+        ${c.sampleBadge ? `<div style="margin-top:5px;">${c.sampleBadge}</div>` : ''}
+        <div style="font-size:0.74rem; color:var(--muted); margin-top:4px;">
           ${c.orderCount === 1 ? 'Single Purchase' : `${c.orderCount} Orders Placed`}
         </div>
       </td>
-      <td>
+      <td style="padding:14px 16px;">
         <div style="font-weight:800; font-size:1.05rem; color:var(--green);">₹${Math.round(c.totalSpent).toLocaleString('en-IN')}</div>
-        <div style="font-size:0.75rem; color:var(--muted); margin-top:3px;">
+        <div style="font-size:0.74rem; color:var(--muted); margin-top:3px;">
           ${c.orderCount > 1 ? `Avg: ₹${Math.round(c.avgOrderValue)} / ord` : '1st Order'}
         </div>
-        ${c.isConvertedFromSample ? `<div style="font-size:0.72rem; color:#22d3ee; margin-top:2px;">Reg: ₹${Math.round(c.regularSpend)} | Spl: ₹${Math.round(c.sampleSpend)}</div>` : ''}
+        ${c.isConvertedFromSample ? `<div style="font-size:0.72rem; color:#22d3ee; margin-top:3px; background:rgba(6,182,212,0.12); padding:2px 6px; border-radius:4px; display:inline-block;">Reg: ₹${Math.round(c.regularSpend)} • Spl: ₹${Math.round(c.sampleSpend)}</div>` : ''}
       </td>
-      <td>
+      <td style="padding:14px 16px;">
         <div style="font-size:0.85rem; font-weight:600; color:var(--text);">${locSnippet}</div>
-        <div style="font-size:0.75rem; color:var(--muted); margin-top:2px; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.address}">
+        <div style="font-size:0.74rem; color:var(--muted); margin-top:3px; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.address}">
           📍 ${c.address || '—'}
         </div>
       </td>
-      <td>
+      <td style="padding:14px 16px;">
         <div style="font-size:0.82rem; font-weight:600; color:#cbd5e1;">Last: ${c.lastOrderDate}</div>
-        <div style="font-size:0.75rem; color:#a78bfa; margin-top:2px;">⏳ ${c.lastOrderAgo}</div>
-        ${c.isConvertedFromSample ? `<div style="font-size:0.72rem; color:#34d399; margin-top:2px; font-weight:600;">⚡ ${c.conversionGap}</div>` : (c.orderCount > 1 ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:1px;">First: ${c.firstOrderDate}</div>` : '')}
+        <div style="font-size:0.74rem; color:#a78bfa; margin-top:3px;">⏳ ${c.lastOrderAgo}</div>
+        ${c.isConvertedFromSample ? `<div style="font-size:0.72rem; color:#34d399; margin-top:3px; font-weight:700;">⚡ ${c.conversionGap}</div>` : (c.orderCount > 1 ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">First: ${c.firstOrderDate}</div>` : '')}
       </td>
-      <td>
-        <div style="font-size:0.8rem; color:#cbd5e1; max-width:210px; line-height:1.4;" title="${c.productSummary}">
+      <td style="padding:14px 16px;">
+        <div style="font-size:0.8rem; color:#cbd5e1; max-width:210px; line-height:1.45;" title="${c.productSummary}">
           🛍️ ${prodSnippet}
         </div>
       </td>
-      <td style="text-align:center;">
+      <td style="text-align:center; padding:14px 16px;">
         <div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;">
           <button class="btn-cust-action btn-cust-view" onclick="openCustomerHistory('${c.key}')" title="View all orders">
             👁️ Orders (${c.orderCount})
           </button>
           ${cleanPhone ? `
-            <a href="${waUrl}" target="_blank" class="btn-cust-action btn-cust-wa" title="Send WhatsApp Greeting">
+            <a href="${waUrl}" target="_blank" class="btn-cust-action btn-cust-wa" title="Send WhatsApp Message">
               💬 WhatsApp
             </a>
             <a href="${callUrl}" class="btn-cust-action btn-cust-call" title="Call Customer">
