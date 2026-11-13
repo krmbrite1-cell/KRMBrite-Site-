@@ -34,15 +34,24 @@ try {
     if (_cachedShorts) window._reviewShortsConfig = JSON.parse(_cachedShorts);
 } catch(e) {}
 
-// ── CACHE HELPERS (localStorage - DISABLED for freshness) ─────────────────
-const _CACHE_TTL = 0; // Disabled to ensure admin changes show immediately
+// ── CACHE HELPERS (localStorage - 3 min TTL to protect Firebase Free Quota) ─
+const _CACHE_TTL = 3 * 60 * 1000; // 3 minutes cache (eliminates 85%+ repeat reads while keeping site fresh)
 function _cacheGet(key) {
-    // Return null to force background fetch every time as requested by user
-    return null;
+    try {
+        const item = localStorage.getItem('krm_c_' + key);
+        if (!item) return null;
+        const parsed = JSON.parse(item);
+        if (!parsed || !parsed.t || parsed.d === undefined) return null;
+        if (Date.now() - parsed.t > _CACHE_TTL) return null; // Expired
+        return parsed.d;
+    } catch(e) {
+        return null;
+    }
 }
 function _cacheSet(key, data) {
-    // Still save to local storage for future reference, but _cacheGet will ignore it
-    try { localStorage.setItem('krm_c_' + key, JSON.stringify({ d: data, t: Date.now() })); } catch(e) {}
+    try { 
+        localStorage.setItem('krm_c_' + key, JSON.stringify({ d: data, t: Date.now() })); 
+    } catch(e) {}
 }
 // ────────────────────────────────────────────────────────────
 
@@ -168,49 +177,75 @@ function loadProductOverridesAndInit() {
         }
     }, 800);
 
-    // ── Real-time Listeners ──
-    db.collection('productOverrides').onSnapshot(snap => {
+    // ⚡ Check 3-min cache first: if present, render instantly with 0 Firestore reads!
+    const cachedBundle = _cacheGet('store_bundle');
+    if (cachedBundle && cachedBundle.ovData && cachedBundle.fsData && cachedBundle.stockData) {
+        ovData = cachedBundle.ovData;
+        fsData = cachedBundle.fsData;
+        stockData = cachedBundle.stockData;
+        flags.ov = true;
+        flags.fs = true;
+        flags.st = true;
+        syncUI(true);
+        if (cachedBundle.siteConfig) {
+            _applySiteConfig(cachedBundle.siteConfig);
+        }
+        return;
+    }
+
+    // ── Fetch fresh data via get() and cache for 3 mins (protects Firebase Free Quota) ──
+    const p1 = db.collection('productOverrides').get().then(snap => {
         ovData = {};
         snap.forEach(d => { ovData[d.id] = d.data(); });
         flags.ov = true;
-        syncUI();
-    }, err => { flags.ov = true; syncUI(); });
+    }).catch(e => { flags.ov = true; });
 
-    db.collection('firestoreProducts').onSnapshot(snap => {
+    const p2 = db.collection('firestoreProducts').get().then(snap => {
         fsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         flags.fs = true;
-        syncUI();
-    }, err => { flags.fs = true; syncUI(); });
+    }).catch(e => { flags.fs = true; });
 
-    db.collection('stock').onSnapshot(snap => {
+    const p3 = db.collection('stock').get().then(snap => {
         stockData = {};
         snap.forEach(d => { stockData[d.id] = d.data(); });
         flags.st = true;
-        syncUI();
-    }, err => { flags.st = true; syncUI(); });
+    }).catch(e => { flags.st = true; });
 
-    db.collection('settings').doc('siteConfig').onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.youtubeUrl) {
-                _applyYoutubeUrl(data.youtubeUrl);
-            }
-            if (data.reviewShortsUrl !== undefined) {
-                const vidId = data.reviewShortsVideoId || extractYoutubeId(data.reviewShortsUrl);
-                window._reviewShortsConfig = {
-                    url: data.reviewShortsUrl,
-                    videoId: vidId,
-                    enabled: data.reviewShortsEnabled !== false && !!vidId,
-                    title: data.reviewShortsTitle || 'Customer Review'
-                };
-                try {
-                    localStorage.setItem('krm_review_shorts_config', JSON.stringify(window._reviewShortsConfig));
-                } catch(e) {}
-                renderPublicReviews();
-                if (typeof renderProductReviews === 'function') renderProductReviews();
-            }
+    const p4 = db.collection('settings').doc('siteConfig').get().then(doc => {
+        return doc.exists ? doc.data() : null;
+    }).catch(e => null);
+
+    Promise.all([p1, p2, p3, p4]).then(([_, __, ___, cfgData]) => {
+        syncUI();
+        if (cfgData) {
+            _applySiteConfig(cfgData);
         }
+        _cacheSet('store_bundle', { ovData, fsData, stockData, siteConfig: cfgData });
+    }).catch(err => {
+        console.warn('Storefront data fetch error:', err);
+        syncUI(true);
     });
+}
+
+function _applySiteConfig(data) {
+    if (!data) return;
+    if (data.youtubeUrl) {
+        _applyYoutubeUrl(data.youtubeUrl);
+    }
+    if (data.reviewShortsUrl !== undefined) {
+        const vidId = data.reviewShortsVideoId || extractYoutubeId(data.reviewShortsUrl);
+        window._reviewShortsConfig = {
+            url: data.reviewShortsUrl,
+            videoId: vidId,
+            enabled: data.reviewShortsEnabled !== false && !!vidId,
+            title: data.reviewShortsTitle || 'Customer Review'
+        };
+        try {
+            localStorage.setItem('krm_review_shorts_config', JSON.stringify(window._reviewShortsConfig));
+        } catch(e) {}
+        renderPublicReviews();
+        if (typeof renderProductReviews === 'function') renderProductReviews();
+    }
 }
 
 function extractYoutubeId(url) {
@@ -1204,9 +1239,20 @@ function renderPublicReviews() {
   }
 }
 
-// Load all reviews from Firestore (real-time listener)
+// Load all reviews from Firestore (cached for 3 minutes to protect daily free quota)
 function loadReviewsFromFirestore() {
-  db.collection('reviews').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+  const cached = _cacheGet('reviews');
+  if (cached && Array.isArray(cached) && cached.length > 0) {
+    window.isFirestoreReviewsLoaded = true;
+    reviews = cached;
+    renderReviewSummary();
+    renderPublicReviews();
+    if (document.getElementById('product-grid')) renderProducts();
+    if (typeof renderProductReviews === 'function') renderProductReviews();
+    return; // Served instantly from cache with 0 Firestore reads!
+  }
+
+  db.collection('reviews').orderBy('createdAt', 'desc').get().then(snapshot => {
     window.isFirestoreReviewsLoaded = true;
     reviews = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
     _cacheSet('reviews', reviews);
@@ -1215,8 +1261,16 @@ function loadReviewsFromFirestore() {
     // Update product cards with new ratings
     if (document.getElementById('product-grid')) renderProducts();
     if (typeof renderProductReviews === 'function') renderProductReviews();
-  }, err => {
-    console.error('Firestore reviews load error:', err);
+  }).catch(err => {
+    console.warn('Firestore reviews load error:', err);
+    try {
+      const fallback = JSON.parse(localStorage.getItem('krm_c_reviews') || '{}').d;
+      if (Array.isArray(fallback) && fallback.length > 0) {
+        reviews = fallback;
+        renderReviewSummary();
+        renderPublicReviews();
+      }
+    } catch(e) {}
   });
 }
 

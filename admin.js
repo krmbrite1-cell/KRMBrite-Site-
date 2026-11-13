@@ -227,7 +227,11 @@ function isPendingStatus(status) {
 function isPaidOrder(o) {
   if (!o) return false;
   const s = String(o.status || '').trim().toLowerCase();
-  return s === 'paid';
+  if (s === 'paid' || s === 'captured' || s === 'success' || s === 'completed') return true;
+  // If razorpayPaymentId or paymentDetails exists and status is not cancelled or failed, it is paid!
+  const hasPaymentId = Boolean(o.razorpayPaymentId || (o.paymentDetails && o.paymentDetails.paymentId));
+  if (hasPaymentId && s !== 'cancelled' && s !== 'failed') return true;
+  return false;
 }
 
 // 🛡️ PERSISTENT PRINTED CACHE (localStorage):
@@ -302,12 +306,14 @@ function startOrdersListener() {
   const tbodyPrinted = document.getElementById('ordersVTablePrinted');
   if (tbodyNew) tbodyNew.innerHTML = `<tr><td colspan="7" class="loading-cell"><div class="spinner"></div> Loading orders…</td></tr>`;
   if (tbodyPrinted) tbodyPrinted.innerHTML = `<tr><td colspan="8" class="loading-cell"><div class="spinner"></div> Loading orders…</td></tr>`;
-  unsubOrders = db.collection('orders').orderBy('createdAt', 'desc').onSnapshot(snap => {
+  // Load ALL orders unconditionally so orders without createdAt or with different timestamp fields are never omitted
+  unsubOrders = db.collection('orders').onSnapshot(snap => {
     const rawList = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
     const printedCache = getPrintedOrderCache();
 
     // Safeguard Deduplication & Merging:
-    // Any documents sharing razorpayOrderId, razorpayPaymentId, id, or firestoreId belong to the same customer order!
+    // Only merge documents if they are truly identical transactions (same razorpayOrderId, razorpayPaymentId, or custom ID).
+    // Never merge distinct orders placed by the same customer!
     const orderMap = new Map();
     for (const ord of rawList) {
       // 1. Check if this order or any of its keys were previously printed and locked in cache
@@ -320,20 +326,30 @@ function startOrdersListener() {
         ord.isPrinted = true;
       }
 
-      // 2. Find if this order matches an existing entry by razorpayOrderId, id, firestoreId, paymentId, or customer details
+      // 2. Find if this order matches an existing entry by razorpayOrderId, id, firestoreId, or paymentId
       let matchKey = null;
       for (const [k, existing] of orderMap.entries()) {
+        // Strict guard: if both have razorpayOrderId and they differ, they are definitely DIFFERENT orders!
+        if (ord.razorpayOrderId && existing.razorpayOrderId && ord.razorpayOrderId !== existing.razorpayOrderId) {
+          continue;
+        }
+        // Strict guard: if both have different custom order IDs, they are DIFFERENT orders!
+        if (ord.id && existing.id && ord.id !== existing.id) {
+          continue;
+        }
+        // Strict guard: if both have razorpayPaymentId and they differ, they are DIFFERENT transactions!
+        if (ord.razorpayPaymentId && existing.razorpayPaymentId && ord.razorpayPaymentId !== existing.razorpayPaymentId) {
+          continue;
+        }
+
         const sameRzp = ord.razorpayOrderId && existing.razorpayOrderId && ord.razorpayOrderId === existing.razorpayOrderId;
         const sameId = ord.id && existing.id && ord.id === existing.id;
         const sameDoc = ord.firestoreId && (ord.firestoreId === existing.firestoreId || (existing.allFirestoreIds && existing.allFirestoreIds.includes(ord.firestoreId)));
         const crossDocRzp = (ord.firestoreId && existing.razorpayOrderId && ord.firestoreId === existing.razorpayOrderId) ||
                             (ord.razorpayOrderId && existing.firestoreId && ord.razorpayOrderId === existing.firestoreId);
         const samePayment = ord.razorpayPaymentId && existing.razorpayPaymentId && ord.razorpayPaymentId === existing.razorpayPaymentId;
-        const sameCustOrder = ord.number && existing.number && ord.number === existing.number &&
-                              ord.date && existing.date && ord.date === existing.date &&
-                              ord.totalCost && existing.totalCost && ord.totalCost === existing.totalCost;
 
-        if (sameRzp || sameId || sameDoc || crossDocRzp || samePayment || sameCustOrder) {
+        if (sameRzp || sameId || sameDoc || crossDocRzp || samePayment) {
           matchKey = k;
           break;
         }
@@ -568,10 +584,37 @@ function renderOrders() {
   }
 
   const renderRow = (o, sectionType) => {
-    const statusClass = (o.status === 'Paid' || o.status === 'paid') ? 'badge-success' : o.status === 'Failed' ? 'badge-danger' : o.status === 'Cancelled' ? 'badge-cancel' : 'badge-warn';
-    const items = (o.items||[]).map(i => `<div class="order-item"><span>${i.title}</span><span class="item-meta">×${i.quantity} — ₹${(i.price*i.quantity).toFixed(0)}</span></div>`).join('');
-    const addr = [o.address1,o.address2,o.district,o.state,o.pincode].filter(Boolean).join(', ');
-    const deliveryBy = o.deliveryBy || 'ST Courier';
+    const statusClass = (o.status === 'Paid' || o.status === 'paid' || isPaidOrder(o)) ? 'badge-success' : o.status === 'Failed' ? 'badge-danger' : o.status === 'Cancelled' ? 'badge-cancel' : 'badge-warn';
+    
+    // Robust items parsing - handles array of objects, array of strings, string, or notes
+    let items = '';
+    if (Array.isArray(o.items) && o.items.length > 0) {
+      items = o.items.map(i => {
+        if (!i) return '';
+        if (typeof i === 'string') return `<div class="order-item"><span>${i}</span></div>`;
+        const title = i.title || i.name || 'Product';
+        const qty = i.quantity || 1;
+        const price = (typeof i.price === 'number' && i.price > 0) ? ` — ₹${(i.price * qty).toFixed(0)}` : '';
+        return `<div class="order-item"><span>${title}</span><span class="item-meta">×${qty}${price}</span></div>`;
+      }).filter(Boolean).join('');
+    } else if (typeof o.items === 'string' && o.items.trim()) {
+      items = `<div class="order-item"><span>${o.items}</span></div>`;
+    } else if (o.notes && o.notes.items) {
+      items = `<div class="order-item"><span>${o.notes.items}</span></div>`;
+    } else {
+      items = `<div class="order-item"><span>Order Item (1x)</span></div>`;
+    }
+
+    const addrParts = [
+      o.address1 || o.address || (o.notes && o.notes.address1) || (o.notes && o.notes.address),
+      o.address2 || (o.notes && o.notes.address2),
+      o.district || (o.notes && o.notes.district),
+      o.state || (o.notes && o.notes.state),
+      o.pincode || (o.notes && o.notes.pincode)
+    ].filter(Boolean);
+    const addr = addrParts.length ? addrParts.join(', ') : '—';
+
+    const deliveryBy = o.deliveryBy || (o.notes && o.notes.deliveryBy) || 'ST Courier';
     const isTpc = deliveryBy.toLowerCase().includes('professional');
     const badgeBg = isTpc ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)';
     const badgeColor = isTpc ? '#34d399' : '#a78bfa';
@@ -832,8 +875,31 @@ function downloadOrdersPdf(ordersToPrint, filename) {
       yPos = margin;
     }
 
-    const addr = [o.address1, o.address2, o.district, o.state, o.pincode].filter(Boolean).join(', ');
-    const items = (o.items || []).map(i => `${i.title} (x${i.quantity})`).join(', ');
+    const addrParts = [
+      o.address1 || o.address || (o.notes && o.notes.address1) || (o.notes && o.notes.address),
+      o.address2 || (o.notes && o.notes.address2),
+      o.district || (o.notes && o.notes.district),
+      o.state || (o.notes && o.notes.state),
+      o.pincode || (o.notes && o.notes.pincode)
+    ].filter(Boolean);
+    const addr = addrParts.length ? addrParts.join(', ') : '—';
+
+    let items = '';
+    if (Array.isArray(o.items) && o.items.length > 0) {
+      items = o.items.map(i => {
+        if (!i) return '';
+        if (typeof i === 'string') return i;
+        const title = i.title || i.name || 'Product';
+        const qty = i.quantity || 1;
+        return `${title} (x${qty})`;
+      }).filter(Boolean).join(', ');
+    } else if (typeof o.items === 'string' && o.items.trim()) {
+      items = o.items;
+    } else if (o.notes && o.notes.items) {
+      items = o.notes.items;
+    } else {
+      items = 'Order Item (x1)';
+    }
     const lBottom = yPos + labelH;
 
     // Outer border
@@ -1084,12 +1150,20 @@ function genRevCard(rev, isPending, index = 0) {
 }
 
 window.approveReview = async id => {
-  try { await db.collection('reviews').doc(id).update({ status: 'approved' }); showToast('Review approved ✓'); }
+  try { 
+    await db.collection('reviews').doc(id).update({ status: 'approved' }); 
+    try { localStorage.removeItem('krm_c_reviews'); } catch(e) {}
+    showToast('Review approved ✓'); 
+  }
   catch(e) { alert('Error: '+e.message); }
 };
 window.deleteReview = async id => {
   if (!confirm('Delete this review permanently?')) return;
-  try { await db.collection('reviews').doc(id).delete(); showToast('Review deleted'); }
+  try { 
+    await db.collection('reviews').doc(id).delete(); 
+    try { localStorage.removeItem('krm_c_reviews'); } catch(e) {}
+    showToast('Review deleted'); 
+  }
   catch(e) { alert('Error: '+e.message); }
 };
 
@@ -1601,6 +1675,7 @@ async function saveNewProduct() {
     ]);
     closeAddProductModal();
     renderProductCards();
+    try { localStorage.removeItem('krm_c_store_bundle'); } catch(e) {}
     showToast(`✓ "${title}" added to store!`);
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -2011,6 +2086,7 @@ async function saveStock(pid) {
   try {
     await db.collection('stock').doc(pid).set({ total: val }, { merge: true });
     stockData[pid] = { ...(stockData[pid]||{}), total: val };
+    try { localStorage.removeItem('krm_c_store_bundle'); } catch(e) {}
     updateStockCounters();
     showToast('Stock saved ✓');
   } catch(e) { alert('Error: '+e.message); }

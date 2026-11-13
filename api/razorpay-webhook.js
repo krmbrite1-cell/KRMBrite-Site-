@@ -160,9 +160,6 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
 
   // Document truly doesn't exist — create it with webhook data as fallback
   // Use the Razorpay Order ID as the display Order ID too (so it's consistent)
-  const updateFields = Object.keys(postBody.fields);
-  const updateMask = updateFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
-  const createUrl = `${FIRESTORE_BASE_URL}/orders/${orderId}?${updateMask}`;
   const postBody = {
     fields: {
       id: { stringValue: 'ORD-' + orderId.replace(/[^0-9]/g, '').slice(-13) },
@@ -195,6 +192,10 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
       }
     };
   }
+
+  const updateFields = Object.keys(postBody.fields);
+  const updateMask = updateFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
+  const createUrl = `${FIRESTORE_BASE_URL}/orders/${orderId}?${updateMask}`;
 
   const res = await fetch(createUrl, {
     method: 'PATCH',
