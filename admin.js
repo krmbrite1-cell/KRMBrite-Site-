@@ -654,10 +654,24 @@ function renderOrders() {
     const custName = o.firstName || o.name || o.customerName || (o.paymentDetails && o.paymentDetails.name) || 'Customer';
     const custPhone = o.number || o.phone || o.mobileNumber || o.mobile || o.contact || (o.paymentDetails && o.paymentDetails.contact) || '—';
 
+    // Precise IST date & time formatting (matches Razorpay payment gateway time):
+    let displayTime = o.time || '';
+    let displayDate = o.date || '';
+    let displayDay = o.day || '';
+    const ts = getOrderTimestamp(o);
+    if (ts > 0) {
+      const orderDateObj = new Date(ts);
+      if (!displayTime || !displayDate) {
+        displayTime = orderDateObj.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
+        displayDate = orderDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
+        displayDay  = orderDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
+      }
+    }
+
     return `
     <tr>
       ${checkboxHtml}
-      <td><div class="order-id">#${o.id}</div><div class="order-date">${o.day||''} ${o.date}</div><div class="order-time">🕐 ${o.time||''}</div></td>
+      <td><div class="order-id">#${o.id}</div><div class="order-date">${displayDay} ${displayDate}</div><div class="order-time">🕐 ${displayTime}</div></td>
       <td><div class="cust-name">${custName}</div><div class="cust-phone">📞 ${custPhone}</div><div class="cust-addr">📍 ${addr}</div></td>
       <td><span class="badge" style="background:${badgeBg};color:${badgeColor};border:1px solid ${badgeBorder};font-size:0.8rem;white-space:nowrap;font-weight:700;">🚚 ${deliveryBy}</span></td>
       <td><div class="items-list">${items}</div></td>

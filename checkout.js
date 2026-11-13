@@ -1430,9 +1430,10 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         });
 
-        const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric' });
-        const timeStr = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
-        const dayStr  = now.toLocaleDateString('en-US', { weekday: 'long' });
+        // Always format date and time in Indian Standard Time (IST)
+        const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
+        const dayStr  = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
 
         // Get user ID with fallback
         let currentUser = 'guest';

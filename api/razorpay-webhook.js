@@ -77,15 +77,56 @@ async function findOrderDoc(orderId) {
   return null;
 }
 
+/**
+ * Send instant email notification to merchant using EmailJS REST API
+ * (Ensures client always gets email even for mobile UPI or when Firestore is quota-limited)
+ */
+async function sendAdminNotification(orderData) {
+  try {
+    const templateParams = {
+      order_id: orderData.id,
+      customer_name: orderData.firstName || 'Customer',
+      customer_email: orderData.email || 'N/A',
+      customer_phone: orderData.number || 'N/A',
+      customer_address: [orderData.address1, orderData.address2, orderData.district, orderData.state, orderData.pincode].filter(Boolean).join(', ') || 'N/A',
+      order_date: `${orderData.day || ''}, ${orderData.date || ''} at ${orderData.time || ''}`,
+      total_amount: orderData.totalCost || '₹0',
+      items_list: orderData.itemsSummary || 'Order Items',
+      delivery_by: orderData.deliveryBy || 'ST Courier',
+      admin_email: 'krmbrite1@gmail.com'
+    };
+
+    const emailRes = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: 'service_uon76k5',
+        template_id: 'template_admin_order',
+        user_id: 'AIk1aEspV_Ex5ds1V',
+        template_params: templateParams
+      })
+    });
+    console.log('Webhook admin notification status:', emailRes.status);
+  } catch (err) {
+    console.warn('Webhook email notification failed:', err);
+  }
+}
+
 async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEntity) {
   const notes = (paymentEntity && paymentEntity.notes) || (orderEntity && orderEntity.notes) || {};
   const now = new Date();
-  const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric' });
-  const timeStr = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
-  const dayStr  = now.toLocaleDateString('en-US', { weekday: 'long' });
+  // Use Indian Standard Time (Asia/Kolkata) so server time always matches Razorpay payment time
+  const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
+  const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
+  const dayStr  = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
 
   const totalPaise = (paymentEntity && paymentEntity.amount) || (orderEntity && orderEntity.amount) || 0;
   const totalCost = notes.totalCost || `₹${(totalPaise / 100).toFixed(2)}`;
+
+  // Use the original ORD-timestamp receipt ID from order creation, or generate a full timestamp ID
+  const receiptId = (orderEntity && orderEntity.receipt && String(orderEntity.receipt).startsWith('ORD-'))
+    ? String(orderEntity.receipt)
+    : ('ORD-' + Date.now());
 
   // Parse items from notes if present so items list is never empty in Firestore!
   const itemsList = [];
@@ -159,10 +200,10 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
   }
 
   // Document truly doesn't exist — create it with webhook data as fallback
-  // Use the Razorpay Order ID as the display Order ID too (so it's consistent)
+  // Use the full ORD-timestamp ID for clean display and consistency
   const postBody = {
     fields: {
-      id: { stringValue: 'ORD-' + orderId.replace(/[^0-9]/g, '').slice(-13) },
+      id: { stringValue: receiptId },
       firstName: { stringValue: notes.name || paymentEntity?.description || 'Customer' },
       number: { stringValue: notes.phone || paymentEntity?.contact || '' },
       email: { stringValue: notes.email || paymentEntity?.email || '' },
@@ -197,18 +238,44 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
   const updateMask = updateFields.map(f => `updateMask.fieldPaths=${f}`).join('&');
   const createUrl = `${FIRESTORE_BASE_URL}/orders/${orderId}?${updateMask}`;
 
-  const res = await fetch(createUrl, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(postBody)
-  });
+  let createdDoc = null;
+  try {
+    const res = await fetch(createUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postBody)
+    });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Firestore create failed (${res.status}): ${errText}`);
+    if (res.ok) {
+      createdDoc = await res.json();
+    } else {
+      const errText = await res.text();
+      console.warn(`Firestore create warning (${res.status}): ${errText}`);
+    }
+  } catch (err) {
+    console.error('Firestore create error in webhook:', err);
   }
 
-  return await res.json();
+  // Always send email notification to merchant even if Firestore experiences quota limits!
+  await sendAdminNotification({
+    id: receiptId,
+    firstName: notes.name || paymentEntity?.description || 'Customer',
+    number: notes.phone || paymentEntity?.contact || '',
+    email: notes.email || paymentEntity?.email || '',
+    address1: notes.address1 || notes.address || '',
+    address2: notes.address2 || '',
+    district: notes.district || '',
+    state: notes.state || '',
+    pincode: notes.pincode || '',
+    deliveryBy: notes.deliveryBy || 'ST Courier',
+    totalCost: totalCost,
+    date: dateStr,
+    time: timeStr,
+    day: dayStr,
+    itemsSummary: notes.items || 'Products'
+  });
+
+  return createdDoc || { name: `orders/${orderId}`, fields: postBody.fields };
 }
 
 /**
