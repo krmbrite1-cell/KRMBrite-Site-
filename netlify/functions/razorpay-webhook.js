@@ -79,13 +79,25 @@ async function findOrderDoc(orderId) {
 
 async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEntity) {
   const notes = (paymentEntity && paymentEntity.notes) || (orderEntity && orderEntity.notes) || {};
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric' });
-  const timeStr = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
-  const dayStr  = now.toLocaleDateString('en-US', { weekday: 'long' });
+  // 1. Get exact payment timestamp directly from Razorpay payment entity:
+  const paymentTimestampMs = (paymentEntity && paymentEntity.created_at)
+    ? (paymentEntity.created_at * 1000)
+    : ((orderEntity && orderEntity.created_at) ? (orderEntity.created_at * 1000) : Date.now());
+
+  const payDateObj = new Date(paymentTimestampMs);
+
+  // Exact Indian Standard Time (IST) formatting directly from Razorpay payment timestamp:
+  const dateStr = payDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
+  const timeStr = payDateObj.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
+  const dayStr  = payDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
 
   const totalPaise = (paymentEntity && paymentEntity.amount) || (orderEntity && orderEntity.amount) || 0;
   const totalCost = notes.totalCost || `₹${(totalPaise / 100).toFixed(2)}`;
+
+  // Use the original ORD-timestamp receipt ID from order creation, or generate a full timestamp ID
+  const receiptId = (orderEntity && orderEntity.receipt && String(orderEntity.receipt).startsWith('ORD-'))
+    ? String(orderEntity.receipt)
+    : ('ORD-' + Date.now());
 
   // Parse items from notes if present so items list is never empty in Firestore!
   const itemsList = [];
@@ -156,7 +168,7 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
   const createUrl = `${FIRESTORE_BASE_URL}/orders/${orderId}`;
   const postBody = {
     fields: {
-      id: { stringValue: 'ORD-' + orderId.replace(/[^0-9]/g, '').slice(-13) },
+      id: { stringValue: receiptId },
       firstName: { stringValue: notes.name || paymentEntity?.description || 'Customer' },
       number: { stringValue: notes.phone || paymentEntity?.contact || '' },
       email: { stringValue: notes.email || paymentEntity?.email || '' },
@@ -170,8 +182,9 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
       status: { stringValue: 'Paid' },
       razorpayOrderId: { stringValue: orderId },
       razorpayPaymentId: { stringValue: paymentId || '' },
-      createdAt: { timestampValue: now.toISOString() },
-      paidAt: { timestampValue: now.toISOString() },
+      createdAt: { timestampValue: payDateObj.toISOString() },
+      paidAt: { timestampValue: payDateObj.toISOString() },
+      timestampMs: { integerValue: String(paymentTimestampMs) },
       date: { stringValue: dateStr },
       time: { stringValue: timeStr },
       day: { stringValue: dayStr },

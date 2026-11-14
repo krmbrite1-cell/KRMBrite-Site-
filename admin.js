@@ -293,7 +293,25 @@ function getOrderTimestamp(o) {
     try {
       const parts = String(o.date).split(/[\/\-]/);
       if (parts.length === 3) {
-        const d = parts[0].length === 4 ? new Date(o.date) : new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        const yyyy = parts[0].length === 4 ? parts[0] : parts[2];
+        const mm   = parts[0].length === 4 ? parts[1] : parts[1];
+        const dd   = parts[0].length === 4 ? parts[2] : parts[0];
+        const dateIso = `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+
+        let timePart = '00:00:00';
+        if (o.time && typeof o.time === 'string') {
+          const tMatch = o.time.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+          if (tMatch) {
+            let h = parseInt(tMatch[1], 10);
+            const m = parseInt(tMatch[2], 10);
+            const s = tMatch[3] ? parseInt(tMatch[3], 10) : 0;
+            const ampm = tMatch[4] ? tMatch[4].toLowerCase() : null;
+            if (ampm === 'pm' && h < 12) h += 12;
+            if (ampm === 'am' && h === 12) h = 0;
+            timePart = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+          }
+        }
+        const d = new Date(`${dateIso}T${timePart}+05:30`);
         if (!isNaN(d.getTime())) return d.getTime();
       }
     } catch(e) {}
@@ -654,18 +672,16 @@ function renderOrders() {
     const custName = o.firstName || o.name || o.customerName || (o.paymentDetails && o.paymentDetails.name) || 'Customer';
     const custPhone = o.number || o.phone || o.mobileNumber || o.mobile || o.contact || (o.paymentDetails && o.paymentDetails.contact) || '—';
 
-    // Precise IST date & time formatting (matches Razorpay payment gateway time):
+    // Precise IST date & time formatting (strictly matches Razorpay payment gateway time):
+    const ts = getOrderTimestamp(o);
     let displayTime = o.time || '';
     let displayDate = o.date || '';
     let displayDay = o.day || '';
-    const ts = getOrderTimestamp(o);
     if (ts > 0) {
       const orderDateObj = new Date(ts);
-      if (!displayTime || !displayDate) {
-        displayTime = orderDateObj.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
-        displayDate = orderDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
-        displayDay  = orderDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
-      }
+      displayTime = orderDateObj.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
+      displayDate = orderDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
+      displayDay  = orderDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
     }
 
     return `

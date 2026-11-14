@@ -114,11 +114,17 @@ async function sendAdminNotification(orderData) {
 
 async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEntity) {
   const notes = (paymentEntity && paymentEntity.notes) || (orderEntity && orderEntity.notes) || {};
-  const now = new Date();
-  // Use Indian Standard Time (Asia/Kolkata) so server time always matches Razorpay payment time
-  const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
-  const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
-  const dayStr  = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
+  // 1. Get exact payment timestamp directly from Razorpay payment entity:
+  const paymentTimestampMs = (paymentEntity && paymentEntity.created_at)
+    ? (paymentEntity.created_at * 1000)
+    : ((orderEntity && orderEntity.created_at) ? (orderEntity.created_at * 1000) : Date.now());
+
+  const payDateObj = new Date(paymentTimestampMs);
+
+  // Exact Indian Standard Time (IST) formatting directly from Razorpay payment timestamp:
+  const dateStr = payDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric' });
+  const timeStr = payDateObj.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour:'2-digit', minute:'2-digit', hour12: true });
+  const dayStr  = payDateObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long' });
 
   const totalPaise = (paymentEntity && paymentEntity.amount) || (orderEntity && orderEntity.amount) || 0;
   const totalCost = notes.totalCost || `₹${(totalPaise / 100).toFixed(2)}`;
@@ -217,8 +223,9 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
       status: { stringValue: 'Paid' },
       razorpayOrderId: { stringValue: orderId },
       razorpayPaymentId: { stringValue: paymentId || '' },
-      createdAt: { timestampValue: now.toISOString() },
-      paidAt: { timestampValue: now.toISOString() },
+      createdAt: { timestampValue: payDateObj.toISOString() },
+      paidAt: { timestampValue: payDateObj.toISOString() },
+      timestampMs: { integerValue: String(paymentTimestampMs) },
       date: { stringValue: dateStr },
       time: { stringValue: timeStr },
       day: { stringValue: dayStr },
