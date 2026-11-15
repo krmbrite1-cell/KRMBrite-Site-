@@ -51,32 +51,32 @@
                 
                 <form id="checkoutForm">
                     <div class="input-group">
-                        <label for="firstName">First Name</label>
+                        <label for="firstName">First Name <span style="color:#ef4444;">*</span></label>
                         <input type="text" id="firstName" required placeholder="Your First Name">
                     </div>
 
                     <div class="input-group">
-                        <label for="mobileNumber">Number</label>
-                        <input type="tel" id="mobileNumber" required placeholder="Your Phone Number">
+                        <label for="mobileNumber">Number <span style="color:#ef4444;">*</span></label>
+                        <input type="tel" id="mobileNumber" required placeholder="Your Phone Number" pattern="[0-9]{10}" maxlength="10">
                     </div>
 
                     <div class="input-group">
-                        <label for="emailAddress">Email Address</label>
+                        <label for="emailAddress">Email Address <span style="color:#ef4444;">*</span></label>
                         <input type="email" id="emailAddress" required placeholder="For Order Confirmation & Tracking">
                     </div>
 
                     <div class="input-group">
-                        <label for="address1">Address Line 1</label>
+                        <label for="address1">Address Line 1 <span style="color:#ef4444;">*</span></label>
                         <input type="text" id="address1" required placeholder="House No, Building, Street">
                     </div>
                     
                     <div class="input-group">
-                        <label for="address2">Address Line 2</label>
+                        <label for="address2">Address Line 2 <span style="color:var(--text-muted); font-size:0.85em; font-weight:normal;">(Optional)</span></label>
                         <input type="text" id="address2" placeholder="Locality, Area, Landmark">
                     </div>
 
                     <div class="input-group">
-                        <label for="state">State</label>
+                        <label for="state">State <span style="color:#ef4444;">*</span></label>
                         <select id="state" required>
                             <option value="" disabled selected>Select State</option>
                             <option value="Tamil Nadu">Tamil Nadu</option>
@@ -120,7 +120,7 @@
 
                     <div class="row">
                         <div class="input-group half district-group">
-                            <label for="district">District</label>
+                            <label for="district">District <span style="color:#ef4444;">*</span></label>
                             <div class="searchable-district-container" id="searchableDistrictContainer">
                                 <input type="text" id="district" required placeholder="Select District" readonly autocomplete="off">
                                 <div class="district-dropdown-menu" id="districtDropdownMenu" style="display: none;">
@@ -136,8 +136,8 @@
                             </div>
                         </div>
                         <div class="input-group half">
-                            <label for="pincode">Pincode</label>
-                            <input type="number" id="pincode" required placeholder="6 digit code">
+                            <label for="pincode">Pincode <span style="color:#ef4444;">*</span></label>
+                            <input type="text" id="pincode" required placeholder="6 digit code" pattern="[0-9]{6}" maxlength="6" inputmode="numeric">
                         </div>
                     </div>
 

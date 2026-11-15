@@ -1232,6 +1232,74 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // 🛑 Mandatory Fields Validation (Address Line 2 is optional, all other fields are strictly mandatory)
+        const firstNameInput = document.getElementById("firstName");
+        const firstName = firstNameInput ? firstNameInput.value.trim() : "";
+        if (!firstName) {
+            showToast("Please enter your First Name.", "error");
+            if (firstNameInput) firstNameInput.focus();
+            return;
+        }
+
+        const phoneInput = document.getElementById("mobileNumber");
+        const phoneVal = phoneInput ? phoneInput.value.trim() : "";
+        const cleanPhone10 = phoneVal.replace(/[^0-9]/g, '').slice(-10);
+        if (!cleanPhone10 || cleanPhone10.length !== 10) {
+            showToast("Please enter a valid 10-digit mobile number.", "error");
+            if (phoneInput) phoneInput.focus();
+            return;
+        }
+
+        const emailInput = document.getElementById("emailAddress");
+        const emailVal = emailInput ? emailInput.value.trim() : "";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailVal || !emailRegex.test(emailVal)) {
+            showToast("Please enter a valid email address.", "error");
+            if (emailInput) emailInput.focus();
+            return;
+        }
+
+        const address1Input = document.getElementById("address1");
+        const address1Val = address1Input ? address1Input.value.trim() : "";
+        if (!address1Val) {
+            showToast("Please enter Address Line 1.", "error");
+            if (address1Input) address1Input.focus();
+            return;
+        }
+
+        // Note: Address Line 2 is intentionally optional
+
+        if (!stateInput || !stateInput.value.trim()) {
+            showToast("Please select your State.", "error");
+            if (stateInput) stateInput.focus();
+            return;
+        }
+
+        const districtInput = document.getElementById("district");
+        const districtVal = districtInput ? districtInput.value.trim() : "";
+        if (!districtVal) {
+            showToast("Please select your District.", "error");
+            if (districtInput) districtInput.focus();
+            return;
+        }
+
+        const pincodeInput = document.getElementById("pincode");
+        const pincodeVal = pincodeInput ? pincodeInput.value.trim() : "";
+        const cleanPincode = pincodeVal.replace(/[^0-9]/g, '');
+        if (!cleanPincode || cleanPincode.length !== 6) {
+            showToast("Please enter a valid 6-digit pincode.", "error");
+            if (pincodeInput) pincodeInput.focus();
+            return;
+        }
+
+        const deliveryByInput = document.getElementById("deliveryBy");
+        const deliveryByVal = deliveryByInput ? deliveryByInput.value.trim() : "";
+        if (!deliveryByVal) {
+            showToast("Please select a Delivery Partner.", "error");
+            if (deliveryByInput) deliveryByInput.focus();
+            return;
+        }
+
         const btn = document.querySelector(".proceed-btn");
         const originalText = btn.innerHTML;
         const paymentNotice = document.getElementById("paymentProcessNotice");
@@ -1242,10 +1310,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             // 🛑 Final strict verification: Referral code limit (Max 2 times per mobile number)
-            const phoneInput = document.getElementById("mobileNumber");
-            const phoneVal = phoneInput ? phoneInput.value.trim() : "";
-            const cleanPhone10 = phoneVal.replace(/[^0-9]/g, '').slice(-10);
-
             if (appliedCoupon && appliedCoupon.isReferral) {
                 if (!cleanPhone10 || cleanPhone10.length !== 10) {
                     btn.innerHTML = originalText;
