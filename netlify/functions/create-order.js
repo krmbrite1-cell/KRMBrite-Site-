@@ -82,7 +82,8 @@ exports.handler = async function(event, context) {
         order_id: rzpData.id,
         id: rzpData.id,
         amount: rzpData.amount,
-        currency: rzpData.currency
+        currency: rzpData.currency,
+        receipt: rzpData.receipt || receipt
       })
     };
   } catch (err) {

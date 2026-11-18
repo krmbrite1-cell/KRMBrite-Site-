@@ -60,7 +60,8 @@ module.exports = async function handler(req, res) {
       order_id: rzpData.id,
       id: rzpData.id,
       amount: rzpData.amount,
-      currency: rzpData.currency
+      currency: rzpData.currency,
+      receipt: rzpData.receipt || receipt
     });
   } catch (err) {
     console.error('Error creating Razorpay order:', err);

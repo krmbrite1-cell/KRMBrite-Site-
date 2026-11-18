@@ -351,21 +351,23 @@ function startOrdersListener() {
         if (ord.razorpayOrderId && existing.razorpayOrderId && ord.razorpayOrderId !== existing.razorpayOrderId) {
           continue;
         }
-        // Strict guard: if both have different custom order IDs, they are DIFFERENT orders!
-        if (ord.id && existing.id && ord.id !== existing.id) {
-          continue;
-        }
         // Strict guard: if both have razorpayPaymentId and they differ, they are DIFFERENT transactions!
         if (ord.razorpayPaymentId && existing.razorpayPaymentId && ord.razorpayPaymentId !== existing.razorpayPaymentId) {
           continue;
         }
 
         const sameRzp = ord.razorpayOrderId && existing.razorpayOrderId && ord.razorpayOrderId === existing.razorpayOrderId;
-        const sameId = ord.id && existing.id && ord.id === existing.id;
         const sameDoc = ord.firestoreId && (ord.firestoreId === existing.firestoreId || (existing.allFirestoreIds && existing.allFirestoreIds.includes(ord.firestoreId)));
         const crossDocRzp = (ord.firestoreId && existing.razorpayOrderId && ord.firestoreId === existing.razorpayOrderId) ||
                             (ord.razorpayOrderId && existing.firestoreId && ord.razorpayOrderId === existing.firestoreId);
         const samePayment = ord.razorpayPaymentId && existing.razorpayPaymentId && ord.razorpayPaymentId === existing.razorpayPaymentId;
+
+        // Strict guard: if they do not match on razorpay transaction or docId, but have different custom IDs, they are DIFFERENT orders!
+        if (!sameRzp && !samePayment && !crossDocRzp && !sameDoc && ord.id && existing.id && ord.id !== existing.id) {
+          continue;
+        }
+
+        const sameId = ord.id && existing.id && ord.id === existing.id;
 
         if (sameRzp || sameId || sameDoc || crossDocRzp || samePayment) {
           matchKey = k;
@@ -402,7 +404,11 @@ function startOrdersListener() {
           existing.totalCost = ord.totalCost || existing.totalCost;
         }
 
-        // Prefer complete customer details
+        // Prefer complete customer details & canonical full ORD- ID
+        if (!existing.id && ord.id) existing.id = ord.id;
+        if (ord.id && String(ord.id).startsWith('ORD-') && (!existing.id || !String(existing.id).startsWith('ORD-') || String(existing.id).length < String(ord.id).length)) {
+          existing.id = ord.id;
+        }
         if (!existing.firstName && ord.firstName) existing.firstName = ord.firstName;
         if (!existing.number && ord.number) existing.number = ord.number;
         if (!existing.address1 && ord.address1) existing.address1 = ord.address1;

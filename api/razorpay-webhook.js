@@ -129,10 +129,12 @@ async function createOrderFromWebhook(orderId, paymentId, paymentEntity, orderEn
   const totalPaise = (paymentEntity && paymentEntity.amount) || (orderEntity && orderEntity.amount) || 0;
   const totalCost = notes.totalCost || `₹${(totalPaise / 100).toFixed(2)}`;
 
-  // Use the original ORD-timestamp receipt ID from order creation, or generate a full timestamp ID
+  // Use the original ORD-timestamp receipt ID from order creation, notes.orderId, or fallback
   const receiptId = (orderEntity && orderEntity.receipt && String(orderEntity.receipt).startsWith('ORD-'))
     ? String(orderEntity.receipt)
-    : ('ORD-' + Date.now());
+    : ((notes && notes.orderId && String(notes.orderId).startsWith('ORD-'))
+      ? String(notes.orderId)
+      : ('ORD-' + Date.now()));
 
   // Parse items from notes if present so items list is never empty in Firestore!
   const itemsList = [];

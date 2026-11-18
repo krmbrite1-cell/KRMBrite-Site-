@@ -1335,15 +1335,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 return `${liveProd ? liveProd.title : item.title} x${item.quantity}`;
             }).join(', ').slice(0, 200);
 
-            // 3. Create Order on Backend
+            // 3. Create Order on Backend (Generate single canonical Order ID as Single Source of Truth)
+            const clientGeneratedOrderId = 'ORD-' + Date.now();
             const orderResponse = await fetch('/api/create-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     amount: amountPaise,
                     currency: "INR",
-                    receipt: 'ORD-' + Date.now(),
+                    receipt: clientGeneratedOrderId,
                     notes: {
+                        orderId: clientGeneratedOrderId,
                         name: document.getElementById("firstName").value.trim(),
                         phone: document.getElementById("mobileNumber").value.trim(),
                         email: document.getElementById("emailAddress").value.trim(),
@@ -1411,11 +1413,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (verifyResponse.ok && verifyData.status === "success") {
                             updateVerificationOverlay("Payment Verified! Saving Order...");
                             
-                            // Save order directly as Paid (New Orders)
+                            // Save order directly as Paid with the exact clientGeneratedOrderId (Single Source of Truth)
+                            const finalCanonicalOrderId = (orderData && orderData.receipt) || clientGeneratedOrderId;
                             await saveOrder('Paid', {
                                 paymentId: response.razorpay_payment_id,
-                                orderId: response.razorpay_order_id
-                            });
+                                orderId: response.razorpay_order_id,
+                                receipt: finalCanonicalOrderId
+                            }, finalCanonicalOrderId);
                             
                             localStorage.removeItem('mixx-cart');
                             localStorage.removeItem('krm_buy_now_item');
@@ -1479,7 +1483,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    async function saveOrder(status, paymentDetails = {}) {
+    async function saveOrder(status, paymentDetails = {}, explicitOrderId = null) {
         const now = new Date();
 
         // 🔄 Use live prices from storeData to avoid stale cart price mismatches
@@ -1509,8 +1513,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (user) currentUser = user.uid;
         }
         
+        // Single canonical Order ID: reuse the exact order receipt ID created at payment initialization
+        const finalOrderId = explicitOrderId || (paymentDetails && paymentDetails.receipt) || ('ORD-' + Date.now());
+
         const orderData = {
-            id:        'ORD-' + Date.now(),
+            id:        finalOrderId,
             userId:    currentUser,
             firstName: document.getElementById("firstName").value.trim(),
             email:     document.getElementById("emailAddress").value.trim(),
