@@ -707,7 +707,7 @@ tr:hover td{background:rgba(99,102,241,.04);}
       <div id="ordersView" class="view-section fade-in" style="display:block;">
         <div class="toolbar" style="justify-content: space-between;">
           <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
-            <div class="tb-group"><span class="tb-label">Search</span><input class="tb-input" id="orderSearch" placeholder="Name / Order ID / Phone" oninput="renderOrders()" autocomplete="off" style="width:220px;"></div>
+            <div class="tb-group"><span class="tb-label">Search</span><input class="tb-input" id="orderSearch" placeholder="Name / Order ID / Phone" oninput="debouncedRenderOrders()" autocomplete="off" style="width:220px;"></div>
             <div class="tb-group"><span class="tb-label">From Date/Time</span><input type="datetime-local" class="tb-input" id="filterFrom" onchange="renderOrders()"></div>
             <div class="tb-group"><span class="tb-label">To Date/Time</span><input type="datetime-local" class="tb-input" id="filterTo" onchange="renderOrders()"></div>
             <button class="btn-export" onclick="document.getElementById('orderSearch').value=''; document.getElementById('filterFrom').value=''; document.getElementById('filterTo').value=''; renderOrders();" style="background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); padding: 8px 14px; font-size: 0.85rem;">Reset Filter</button>
@@ -743,7 +743,7 @@ tr:hover td{background:rgba(99,102,241,.04);}
       <div id="printedView" class="view-section">
         <div class="toolbar" style="justify-content: space-between;">
           <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
-            <div class="tb-group"><span class="tb-label">Search</span><input class="tb-input" id="printedSearch" placeholder="Name / Order ID / Phone" oninput="renderOrders()" autocomplete="off" style="width:220px;"></div>
+            <div class="tb-group"><span class="tb-label">Search</span><input class="tb-input" id="printedSearch" placeholder="Name / Order ID / Phone" oninput="debouncedRenderOrders()" autocomplete="off" style="width:220px;"></div>
             <div class="tb-group"><span class="tb-label">From Date/Time</span><input type="datetime-local" class="tb-input" id="printedFilterFrom" onchange="renderOrders()"></div>
             <div class="tb-group"><span class="tb-label">To Date/Time</span><input type="datetime-local" class="tb-input" id="printedFilterTo" onchange="renderOrders()"></div>
             <button class="btn-export" onclick="document.getElementById('printedSearch').value=''; document.getElementById('printedFilterFrom').value=''; document.getElementById('printedFilterTo').value=''; renderOrders();" style="background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); padding: 8px 14px; font-size: 0.85rem;">Reset Filter</button>
@@ -922,7 +922,7 @@ tr:hover td{background:rgba(99,102,241,.04);}
             <!-- Search & Sort Controls with Clear button -->
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
               <div class="tb-group" style="margin:0; position:relative;">
-                <input class="tb-input" id="custSearchInput" placeholder="🔍 Search Name, Phone, District..." oninput="filterAndRenderCustomers()" style="width:250px; padding:9px 34px 9px 14px; border-radius:8px;">
+                <input class="tb-input" id="custSearchInput" placeholder="🔍 Search Name, Phone, District..." oninput="debouncedFilterAndRenderCustomers()" style="width:250px; padding:9px 34px 9px 14px; border-radius:8px;">
                 <button id="custSearchClearBtn" onclick="clearCustSearch()" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:1.15rem; cursor:pointer; line-height:1; padding:2px;">×</button>
               </div>
               <div class="tb-group" style="margin:0;">
